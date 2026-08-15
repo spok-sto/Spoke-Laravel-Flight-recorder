@@ -1,0 +1,7 @@
+parameters:
+    level: 5
+    paths:
+        - src
+    treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        - '#Call to an undefined method Illuminate\\Redis\\Connections\\Connection::#'

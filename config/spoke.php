@@ -4,7 +4,7 @@ return [
 
     'enabled' => env('SPOKE_ENABLED', false),
 
-    'version' => '1.1',
+    'version' => '1.1.1',
 
     'path' => env('SPOKE_PATH', 'spoke'),
 

@@ -5,105 +5,303 @@
 </p>
 
 <p align="center">
-  Self-hosted Laravel monitoring and observability with Flight Recorder tracing,<br>
-  SQL intelligence, exception grouping, queue history, outgoing HTTP inspection,<br>
-  Redis tooling, server health, and production-aware payload capture.
+  See exactly what happened inside every Laravel request — from SQL and Redis
+  to queues, external APIs and exceptions — without sending telemetry to a SaaS
+  or filling your application database with monitoring data.
+</p>
+
+<p align="center">
+  Flight Recorder · SQL Intelligence · N+1 Detection · Exceptions · HTTP · Queues · Redis · Server Health
+</p>
+
+<p align="center">
+  Requires PHP 8.1+ and Laravel 9.52–13.
 </p>
 
 <p align="center">
   <a href="https://github.com/spok-sto/spoke">
-    <img src="https://img.shields.io/github/stars/spok-sto/spoke?style=flat-square&logo=github&label=Stars" alt="Spoke GitHub stars">
+    <img src="https://img.shields.io/github/stars/spok-sto/spoke?style=flat-square&logo=github&label=Stars" alt="GitHub stars">
   </a>
   <img src="https://img.shields.io/badge/Laravel-9.52%E2%80%9313-FF2D20?style=flat-square&logo=laravel&logoColor=white" alt="Laravel 9.52 through 13">
   <img src="https://img.shields.io/badge/PHP-8.1%2B-777BB4?style=flat-square&logo=php&logoColor=white" alt="PHP 8.1 or newer">
   <img src="https://img.shields.io/badge/Storage-JSONL-38BDF8?style=flat-square" alt="JSONL telemetry storage">
-  <img src="https://img.shields.io/badge/Hosting-Self--hosted-10B981?style=flat-square&logo=serverfault&logoColor=white" alt="Self-hosted Laravel monitoring">
+  <img src="https://img.shields.io/badge/Hosting-Self--hosted-10B981?style=flat-square" alt="Self-hosted">
   <a href="LICENSE.md">
-    <img src="https://img.shields.io/badge/License-Custom-F59E0B?style=flat-square" alt="Spoke custom license">
+    <img src="https://img.shields.io/badge/License-Custom-F59E0B?style=flat-square" alt="Custom license">
   </a>
 </p>
 
 <p align="center">
-  <a href="#-quick-start"><strong>Quick start</strong></a>
-  ·
-  <a href="#-why-spoke"><strong>Why Spoke?</strong></a>
-  ·
-  <a href="#-security"><strong>Security</strong></a>
-  ·
-  <a href="#-support-spoke"><strong>Support development</strong></a>
-</p>
-
-<p align="center">
   <a href="docs/spoke.png">
-    <img src="docs/spoke.png" alt="Spoke self-hosted Laravel monitoring and observability dashboard" width="100%">
+    <img src="docs/spoke.png" alt="Spoke dashboard — health score, alerts, SQL regressions, queue failures, and server metrics" width="100%">
   </a>
 </p>
 
 ---
 
-## ✨ What is Spoke?
+## Why Spoke?
 
-Spoke is a lightweight, self-hosted **Laravel monitoring and observability dashboard** for teams
-that want deep framework visibility without adding telemetry tables to their application database
-or sending application data to a managed SaaS platform.
+Debugging a slow or failing Laravel request often means jumping between logs,
+database queries, queue workers, Redis, external API calls and server metrics.
 
-Spoke helps answer the question that usually takes the longest:
+Spoke brings those signals together into one correlated request timeline.
+
+Every recorded request gets a `trace_id`. Spoke connects SQL queries, Redis
+commands, outgoing HTTP calls, jobs, exceptions, runtime and memory into a
+single **Flight Recorder**.
+
+Telemetry stays on your server and is stored in append-only daily JSONL files
+instead of dedicated monitoring tables.
+
+- One request → one correlated trace
+- No dedicated telemetry database
+- Monitoring data stays on your server
+
+### When should I use Spoke?
+
+Use Spoke when you need to:
+
+- diagnose a slow production request
+- understand why an endpoint is generating too many queries
+- correlate an exception with SQL, Redis and external API activity
+- inspect queue delays and failures
+- monitor Laravel without adding dedicated telemetry tables
+- keep observability data on infrastructure you control
+
+Spoke may not be the right choice if you want:
+
+- fully managed multi-server observability with no infrastructure to maintain
+- long-term centralized metrics across hundreds of services
+- a browser toolbar focused exclusively on local development
+
+## The question Spoke is built to answer
 
 > **What actually happened during this request?**
 
-Every recorded request receives a `trace_id`. Spoke correlates its SQL queries, Redis commands,
-outgoing HTTP calls, queue jobs, exceptions, runtime, and PHP memory into a single
-**Flight Recorder** timeline.
+```text
+POST /api/orders/812                         1.42 s
 
-Telemetry is appended to daily `.jsonl` files under `storage/logs/spoke/`. When Spoke is disabled,
-it registers no dashboard routes or telemetry listeners.
+14:22:03.124  Request started
+14:22:03.141  SQL      SELECT customers...     16 ms
+14:22:03.178  SQL      SELECT orders...        31 ms
+              ⚠ Possible N+1 × 27
+14:22:03.412  Redis    GET customer:812         3 ms
+14:22:03.488  HTTP     POST ERP API           641 ms
+              ⚠ Slow external request
+14:22:04.184  Queue    InvoiceJob dispatched
+14:22:04.218  Request completed               1.42 s
 
-## 🚀 Highlights
+Peak memory: 74 MB
+```
 
-| | Capability | What you get |
+Slow events are written immediately, so useful diagnostics survive even if the
+request fails before Laravel finishes normally. `TraceContext` is request-scoped
+and Octane-safe. Queue payload hooks carry `spoke_trace_id` so background jobs
+can rejoin the original request.
+
+## Features
+
+| | Capability | What it solves |
 |---|---|---|
-| 🔗 | **Flight Recorder** | One correlated timeline for the complete Laravel request lifecycle |
-| 🐘 | **SQL Intelligence** | Slow queries, N+1 detection, fingerprints, rankings, regressions, `EXPLAIN` / `ANALYZE` |
-| 💥 | **Exception Center** | Stable grouping, occurrences, affected routes, stack traces, request correlation |
-| 🌐 | **HTTP Observability** | Incoming requests and Laravel HTTP client calls with timing and redacted bodies |
-| ⚙️ | **Queue History** | Pending, queued, processed, and failed jobs with wait/runtime analytics |
-| 🔴 | **Redis Tools** | Command recording, memory statistics, safe `SCAN` explorer, type-aware inspection |
-| ✉️ | **Mail Inspector** | Recipients, subjects, and sandboxed HTML previews |
-| 📅 | **Scheduler & Commands** | Finished/failed scheduled tasks and optional Artisan command recording |
-| 🖥️ | **Server Health** | CPU, RAM, disk, database, Redis, PHP-FPM, OPcache, alerts, and health score |
-| 🔒 | **Timed Capture** | Temporarily capture full redacted request/outgoing HTTP payloads with automatic expiry |
+| 🔗 | **Flight Recorder** | Understand one request end-to-end |
+| 🐘 | **SQL Intelligence** | Find slow, repeated and regressed queries |
+| 💥 | **Exception Center** | Group failures and trace them back to requests |
+| 🌐 | **HTTP Monitoring** | Find slow or failed external API calls |
+| ⚙️ | **Queue History** | Track queue wait time, runtime and failures |
+| 🔴 | **Redis Tools** | Inspect Redis activity and keys safely |
+| 📅 | **Scheduler** | See completed and failed scheduled tasks |
+| 🖥️ | **Server Health** | Monitor PHP, DB, Redis, CPU, RAM and disk |
+| 🔒 | **Capture Mode** | Temporarily inspect redacted payloads |
 
-## 🎯 Why Spoke?
+## Quick start
 
-Spoke occupies a different space from Laravel's established observability tools:
+Requires PHP 8.1+ and Laravel 9.52–13.
 
-| | Spoke | Laravel Telescope | Laravel Nightwatch |
-|---|---|---|---|
-| Operating model | Self-hosted dashboard | First-party debugging assistant | Fully managed monitoring platform |
-| Telemetry storage | Daily JSONL files | Application database | Hosted Nightwatch platform |
-| App DB migrations | **No** | Yes | No telemetry tables in the app |
-| Telemetry leaves your server | **No** | No | Yes, after agent-side processing/redaction |
-| Primary fit | Self-hosted diagnostics without a telemetry DB | Deep local Laravel debugging | Managed production monitoring |
-| Request correlation | Flight Recorder | Entries and watchers | Hosted request insights |
-| Cost model | Free personal use; donation-based commercial license | Open source | Hosted service |
+```bash
+composer config repositories.spoke vcs https://github.com/spok-sto/spoke
+composer require konekt/spoke:^1.1
+```
 
-Spoke is not presented as a universal replacement:
+```env
+SPOKE_ENABLED=true
+SPOKE_AUTH_ENABLED=true
+SPOKE_AUTH_USER=spoke-admin
+SPOKE_AUTH_PASS=use-a-long-random-password
+SPOKE_ALLOWED_IPS=127.0.0.1,::1
+```
 
-- Choose **Laravel Telescope** for Laravel's official local debugging workflow and database-backed history.
-- Choose **Laravel Nightwatch** for fully managed production monitoring, hosted retention, and SaaS operations.
-- Choose **Spoke** when you want Laravel-native diagnostics, self-hosted data, JSONL storage, and no telemetry migrations.
+Open `/spoke`.
 
-### Main Laravel monitoring tools
+Spoke is disabled by default. Never expose the dashboard with default credentials
+or an unrestricted IP allowlist.
 
-- [Laravel Telescope](https://github.com/laravel/telescope) — detailed local debugging.
-- [Laravel Pulse](https://github.com/laravel/pulse) — aggregated, self-hosted application metrics.
-- [Laravel Nightwatch](https://nightwatch.laravel.com) — managed production observability.
-- [Laravel Horizon](https://github.com/laravel/horizon) — Redis queue monitoring and management.
-- [Laravel Debugbar](https://github.com/barryvdh/laravel-debugbar) — in-browser local request profiling.
+Laravel discovers `SpokeServiceProvider` automatically.
 
-## ⚡ Quick start
+```bash
+php artisan vendor:publish --tag=spoke-config
+```
 
-### Requirements
+## How Spoke compares
+
+Laravel positions [Pulse](https://github.com/laravel/pulse) for aggregated
+performance and usage insights, and [Telescope](https://github.com/laravel/telescope)
+for detailed event inspection. [Nightwatch](https://nightwatch.laravel.com) is a
+managed monitoring platform. Spoke is request-centric diagnostics that stay on
+your server.
+
+| | Spoke | Telescope | Pulse | Nightwatch |
+|---|---|---|---|---|
+| **Focus** | Request diagnostics | Event inspection | Aggregated metrics | Managed monitoring |
+| **Self-hosted** | Yes | Yes | Yes | No |
+| **Request correlation** | Core concept | Entry-based | Not the primary purpose | Yes |
+| **Telemetry tables in the app DB** | No | Yes | Uses app storage | No |
+| **Managed SaaS** | No | No | No | Yes |
+
+Spoke and Telescope overlap in several areas, but they are optimized for
+different workflows. Telescope provides broad Laravel event inspection. Spoke
+focuses on correlated request diagnostics and self-hosted JSONL telemetry.
+
+Nightwatch is a different category: a managed platform with hosted retention,
+request/job correlation, logs and deployment monitoring. Choose it when you
+want that operational model. Choose Spoke when telemetry must stay on
+infrastructure you control.
+
+Also nearby: [Horizon](https://github.com/laravel/horizon) for Redis queue
+operations, and [Debugbar](https://github.com/barryvdh/laravel-debugbar) for
+in-browser local profiling.
+
+## Find the SQL that is slowing Laravel down
+
+**SQL Intelligence** records the queries that matter:
+
+- slow-query threshold (default `50 ms`)
+- SQL normalization and stable fingerprints
+- ranking by count, total time, average and maximum
+- regression detection against previous retained days
+- PostgreSQL/MySQL `EXPLAIN`
+- query health indicators for sequential scans, index use, rows and cost
+
+### Possible N+1 detected
+
+```text
+SELECT * FROM orders WHERE customer_id = ?
+
+Executions      126
+Total time      482 ms
+Route           GET /customers
+```
+
+Spoke groups repeated query shapes, attaches them to the request that produced
+them, and surfaces the pattern in Flight Recorder.
+
+### EXPLAIN
+
+`EXPLAIN` is available for recorded SQL. PostgreSQL `EXPLAIN ANALYZE` is guarded
+and allowed only for `SELECT` / `WITH`.
+
+**EXPLAIN ANALYZE is never executed automatically.**
+
+## Trace what happens outside your application
+
+Outgoing HTTP calls persist when they are slow or failed. Sensitive headers and
+JSON/form keys are redacted before write. Successful incoming requests can be
+sampled; errors and exceptions are always retained.
+
+Queue history covers pending, processed and failed jobs, including wait time and
+runtime. Redis recording uses safe `SCAN` inspection, never blocking `KEYS`.
+
+## Capture Mode — deep diagnostics when you need them
+
+Turn on detailed redacted payload capture for a limited debugging window. Spoke
+automatically switches it off.
+
+- captures incoming request and outgoing HTTP bodies
+- writes them to a separate `capture-*.jsonl` file
+- keeps normal `requests-*` and `http-*` files small
+- redacts passwords, tokens, API keys and configured secrets
+- limits each body to 256 KB by default
+- expires after 60 minutes
+- shows captured bodies inside the related Flight Recorder
+
+Capture is for short debugging sessions, not permanent full-body logging.
+
+## Security by default
+
+- Disabled by default
+- IP allowlist
+- HTTP Basic Auth
+- Laravel Gate support
+- CSRF protection
+- Payload redaction
+- Sandboxed mail previews
+- Redis `SCAN` instead of `KEYS`
+
+[Read the Security Guide](docs/security.md)
+
+## Storage and performance
+
+Spoke uses append-only daily files under `storage/logs/spoke/`:
+
+```text
+storage/logs/spoke/
+├── requests-2026-08-15.jsonl
+├── queries-2026-08-15.jsonl
+├── exceptions-2026-08-15.jsonl
+├── http-2026-08-15.jsonl
+├── jobs-2026-08-15.jsonl
+├── redis-2026-08-15.jsonl
+├── scheduler-2026-08-15.jsonl
+├── capture-2026-08-15.jsonl
+└── mails/
+```
+
+### Performance philosophy
+
+Spoke is designed to stay out of the way of the host request:
+
+- `LOCK_EX` append writes instead of database inserts
+- tail-based readers with bounded scan and output sizes
+- no full-file loading for large Laravel logs
+- persist slow, error and N+1 events by default
+- separate capture storage so normal files stay small
+- seven-day retention by default
+
+Recorders fail silently and never break the host request or job.
+
+```bash
+php artisan spoke:prune
+php artisan spoke:prune --days=3
+```
+
+```php
+$schedule->command('spoke:prune')->daily();
+```
+
+Measured overhead numbers will be published here once a documented benchmark
+exists. Until then, treat “lightweight” as a design goal, not a published result.
+
+## Configuration
+
+```env
+SPOKE_ENABLED=true
+SPOKE_AUTH_ENABLED=true
+SPOKE_AUTH_USER=spoke-admin
+SPOKE_AUTH_PASS=use-a-long-random-password
+SPOKE_ALLOWED_IPS=127.0.0.1,::1
+```
+
+[Full configuration reference](docs/configuration.md)
+
+## Production guidance
+
+- strong credentials and a restrictive IP allowlist
+- a host-defined `viewSpoke` Gate
+- sampling and slow-only thresholds
+- short retention
+- Capture Mode only when you are actively debugging
+
+Supported databases: PostgreSQL and MySQL/MariaDB.  
+Queue inspection: Laravel **database** and **Redis** transports.
 
 | Laravel | PHP |
 |---|---:|
@@ -113,22 +311,79 @@ Spoke is not presented as a universal replacement:
 | 12.x | 8.2+ |
 | 13.x | 8.3+ |
 
-Supported database engines: **PostgreSQL** and **MySQL/MariaDB**.  
-Queue inspection supports Laravel's **database** and **Redis** queue transports.
+## FAQ
 
-### Install from GitHub
+### How does Spoke fit alongside Telescope, Pulse, Horizon and Nightwatch?
 
-```bash
-composer config repositories.spoke vcs https://github.com/spok-sto/spoke
-composer require konekt/spoke:dev-main
-```
+Use **Telescope** for official Laravel event inspection. Use **Pulse** for
+aggregated self-hosted metrics. Use **Horizon** to operate Redis queues. Use
+**Nightwatch** for managed production monitoring. Use **Spoke** when you want
+one correlated request timeline and JSONL telemetry that never leaves your
+server.
 
-Laravel discovers `SpokeServiceProvider` automatically.
+### Does Spoke require a database?
 
-<details>
-<summary><strong>Install from a local path repository</strong></summary>
+No telemetry database is required. Spoke may read your configured database and
+queue infrastructure for diagnostics, but it does not create Spoke tables.
 
-Add the package repository to your application's `composer.json`:
+### Can Spoke be used in production?
+
+Yes, with deliberate configuration: credentials, IP allowlist, host Gate,
+sampling, short retention and temporary payload capture.
+
+### Does Spoke record passwords or API tokens?
+
+Spoke redacts configured sensitive headers and JSON/form keys before writing
+payload data. Request bodies are off by default. Review `redact_keys` before
+enabling body capture.
+
+### How long does Spoke keep telemetry?
+
+Seven days by default. Change `SPOKE_RETENTION_DAYS` or run
+`php artisan spoke:prune --days=N`.
+
+## Feedback
+
+If you use Spoke, these answers shape the roadmap:
+
+- Which trace detail saved you the most time?
+- What is still difficult to diagnose?
+- Where does Spoke create too much overhead or noise?
+
+[Open an issue](https://github.com/spok-sto/spoke/issues)
+
+## Support Spoke
+
+If Spoke saves you debugging time, you can support its continued development
+through a donation.
+
+Donations help fund Laravel compatibility, performance work, security
+improvements and new Flight Recorder capabilities.
+
+<p align="center">
+  <a href="https://paypal.me/spoke26">
+    <img src="https://img.shields.io/badge/Support%20Spoke-Donate%20with%20PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Donate with PayPal">
+  </a>
+</p>
+
+## License
+
+| Use | Terms |
+|---|---|
+| **Personal / educational / non-commercial** | Free |
+| **Commercial / business use** | Requires a commercial license |
+| **Commercial license** | Any donation currently grants a commercial license. Keep the payment receipt as proof. |
+
+Commercial use means use in a company, agency, enterprise, client project, or
+commercial product/service.
+
+Questions about licensing? [Open an issue](https://github.com/spok-sto/spoke/issues).
+
+See [LICENSE.md](LICENSE.md) for the complete terms.
+
+## Development
+
+Local path install for package work:
 
 ```json
 {
@@ -141,295 +396,15 @@ Add the package repository to your application's `composer.json`:
 }
 ```
 
-Then install it:
-
 ```bash
-composer require konekt/spoke:dev-main
+composer require konekt/spoke:^1.1
 ```
-
-</details>
-
-### Enable and secure the dashboard
-
-```env
-SPOKE_ENABLED=true
-SPOKE_AUTH_ENABLED=true
-SPOKE_AUTH_USER=spoke-admin
-SPOKE_AUTH_PASS=use-a-long-random-password
-SPOKE_ALLOWED_IPS=127.0.0.1,::1
-```
-
-Open:
-
-```text
-https://your-app.test/spoke
-```
-
-> Spoke is disabled by default. Never expose the dashboard publicly with default credentials or an
-> unrestricted IP allowlist.
-
-### Publish the configuration
-
-```bash
-php artisan vendor:publish --tag=spoke-config
-```
-
-The complete configuration reference is available in [`config/spoke.php`](config/spoke.php).
-
-## 🔗 Flight Recorder
-
-Flight Recorder turns fragmented telemetry into one request story:
-
-```text
-Request
- ├── SQL queries and N+1 groups
- ├── Redis commands
- ├── Outgoing HTTP calls
- ├── Dispatched and processed queue jobs
- ├── Logged exceptions
- └── Runtime and PHP worker memory
-```
-
-Slow events are written immediately so useful diagnostics survive even if the request fails before
-Laravel reaches the normal request-finished event.
-
-`TraceContext` is request-scoped and Octane-safe. Queue payload hooks carry `spoke_trace_id` and
-queue timing metadata so background job events can rejoin the original request trace.
-
-## 🧠 SQL and Laravel performance monitoring
-
-Spoke records and analyzes the SQL activity that matters:
-
-- configurable slow-query threshold (default: `50 ms`);
-- automatic SQL normalization and stable fingerprints;
-- possible N+1 detection with affected request context;
-- ranking by count, total time, average time, and maximum time;
-- regression detection against previous retained days;
-- PostgreSQL/MySQL `EXPLAIN`;
-- guarded PostgreSQL `EXPLAIN ANALYZE` for `SELECT` / `WITH` statements;
-- query health indicators for sequential scans, index use, rows, and cost;
-- truncated bindings to protect memory and telemetry size.
-
-## 🌐 Requests, outgoing HTTP, and payload capture
-
-Normal operation favors low overhead and data minimization:
-
-- incoming request payloads are off by default;
-- failed request bodies can be enabled separately and are redacted/truncated;
-- outgoing HTTP calls persist only when slow or failed by default;
-- sensitive headers and JSON/form keys are redacted before data is written;
-- successful requests can be sampled while errors are always retained.
-
-The **Capture** button enables temporary deep diagnostics:
-
-- captures incoming request and outgoing HTTP request/response bodies;
-- writes full payloads to a separate `capture-YYYY-MM-DD.jsonl` file;
-- keeps normal `requests-*` and `http-*` files small and fast;
-- continues to redact passwords, tokens, API keys, card data, and configured sensitive keys;
-- limits each body to `256 KB` by default;
-- automatically turns off after `60 minutes`;
-- shows captured bodies inside the related Flight Recorder.
-
-Capture is designed for short debugging sessions, not permanent full-body logging.
-
-## 🛡️ Security
-
-Dashboard access is evaluated in this order:
-
-1. **IP allowlist**
-2. **HTTP Basic Authentication** (when enabled)
-3. **Laravel `viewSpoke` Gate**
-
-A host application may define a stricter gate:
-
-```php
-use App\Models\User;
-use Illuminate\Support\Facades\Gate;
-
-Gate::define('viewSpoke', function (?User $user = null): bool {
-    return $user?->role_name === 'superadmin';
-});
-```
-
-Additional safeguards:
-
-- unauthorized IPs and denied Gate requests receive `404` to reduce route enumeration;
-- mutating dashboard endpoints use Laravel CSRF protection;
-- log/mail readers enforce path boundaries;
-- email HTML previews run in a sandbox with restrictive CSP;
-- Redis browsing uses `SCAN`, never blocking `KEYS`;
-- telemetry is stored outside the public web root;
-- recorders fail silently and never break the host request or background job.
-
-For Nginx with PHP-FPM, forward the authorization header:
-
-```nginx
-fastcgi_param HTTP_AUTHORIZATION $http_authorization;
-```
-
-## ⚙️ Configuration
-
-Common environment variables:
-
-| Variable | Default | Purpose |
-|---|---:|---|
-| `SPOKE_ENABLED` | `false` | Master switch |
-| `SPOKE_PATH` | `spoke` | Dashboard URI |
-| `SPOKE_AUTH_ENABLED` | `true` | Require HTTP Basic Auth |
-| `SPOKE_AUTH_USER` | `spoke` | Basic Auth username |
-| `SPOKE_AUTH_PASS` | `spoke` | Basic Auth password — change before use |
-| `SPOKE_ALLOWED_IPS` | `0.0.0.0/0` | Comma/space-separated IPs and CIDRs |
-| `SPOKE_RETENTION_DAYS` | `7` | JSONL and mail-preview retention |
-| `SPOKE_REQUESTS_SAMPLE_RATE` | `1.0` | Fraction of successful requests retained |
-| `SPOKE_QUERIES_SLOW_ONLY_MS` | `50` | Slow SQL threshold |
-| `SPOKE_REDIS_SLOW_ONLY_MS` | `5` | Slow Redis threshold |
-| `SPOKE_HTTP_SLOW_ONLY_MS` | `200` | Slow outgoing HTTP threshold |
-| `SPOKE_RECORD_REQUEST_BODY` | `false` | Store redacted failed-request bodies |
-| `SPOKE_CAPTURE_TTL_MINUTES` | `60` | Automatic Capture expiry |
-| `SPOKE_CAPTURE_MAX_BODY_BYTES` | `262144` | Capture body limit |
-| `SPOKE_RECORD_COMMANDS` | `false` | Optional Artisan command recording |
-| `SPOKE_RECORD_CLI` | `false` | Optional SQL recording for CLI/workers |
-
-Use [`config/spoke.php`](config/spoke.php) for recorder switches, redaction keys, reader limits,
-health thresholds, regression settings, mail storage, and Redis value limits.
-
-## 📦 Storage, retention, and performance
-
-Spoke uses append-only daily files:
-
-```text
-storage/logs/spoke/
-├── requests-2026-08-15.jsonl
-├── queries-2026-08-15.jsonl
-├── exceptions-2026-08-15.jsonl
-├── http-2026-08-15.jsonl
-├── jobs-2026-08-15.jsonl
-├── redis-2026-08-15.jsonl
-├── scheduler-2026-08-15.jsonl
-├── commands-2026-08-15.jsonl
-├── capture-2026-08-15.jsonl
-└── mails/
-```
-
-Performance-focused behavior:
-
-- `LOCK_EX` append writes instead of database inserts;
-- tail-based readers with bounded scan/output sizes;
-- no full-file loading for large Laravel logs;
-- byte-cursor pagination for multi-gigabyte log files;
-- slow/error/N+1 persistence instead of recording every event by default;
-- separate capture storage to avoid bloating normal request/HTTP files;
-- configurable sampling and body limits;
-- seven-day retention by default.
-
-Pruning runs lazily on the first write in a process and can be scheduled independently:
-
-```bash
-php artisan spoke:prune
-php artisan spoke:prune --days=3
-```
-
-Schedule it daily in your Laravel console scheduler:
-
-```php
-$schedule->command('spoke:prune')->daily();
-```
-
-## ❓ Frequently asked questions
-
-### Is Spoke an alternative to Laravel Telescope?
-
-Spoke is a self-hosted Laravel Telescope alternative for teams that specifically want JSONL
-telemetry and no monitoring tables in the application database. Telescope remains Laravel's official
-debugging assistant and covers a broader first-party watcher ecosystem.
-
-### Does Spoke replace Laravel Nightwatch?
-
-Not in every use case. Nightwatch is a managed Laravel application monitoring service. Spoke is for
-teams that prefer self-hosted Laravel observability and want telemetry to remain on their own server.
-
-### Does Spoke require a database?
-
-No telemetry database is required. Spoke stores its monitoring data in daily JSONL files. It may read
-your configured database and queue infrastructure to report diagnostics, but it does not create Spoke
-telemetry tables.
-
-### Can Spoke be used in production?
-
-Yes, with deliberate configuration: strong credentials, a restrictive IP allowlist, a host-defined
-Gate, sampling, slow-only thresholds, short retention, and temporary payload capture. Spoke is disabled
-by default so each application explicitly opts in.
-
-### Does Spoke record passwords or API tokens?
-
-Spoke redacts configured sensitive headers and JSON/form keys before writing payload data. Request
-bodies are off by default, and full capture is temporary. Review `redact_keys` for your domain-specific
-secrets before enabling body capture.
-
-### How long does Spoke keep telemetry?
-
-The default retention is seven days. Change it with `SPOKE_RETENTION_DAYS` or run
-`php artisan spoke:prune --days=N`.
-
-### What are the main Laravel monitoring tools?
-
-The main Laravel tools are Telescope for local debugging, Pulse for aggregated self-hosted metrics,
-Nightwatch for managed production observability, Horizon for Redis queues, and Debugbar for local
-request profiling.
-
-## 💬 Feedback and roadmap
-
-Spoke is shaped by real Laravel debugging and operations work. If you use it, your experience is
-valuable:
-
-- Which trace detail saved you the most time?
-- What is still difficult to diagnose?
-- Which Laravel integration should Spoke cover next?
-- Where does Spoke create too much overhead or noise?
-
-Share feedback through [GitHub Issues](https://github.com/spok-sto/spoke/issues). Clear bug reports,
-performance measurements, and real workflow examples directly influence the roadmap.
-
-## 💙 Support Spoke
-
-Spoke is independently developed and maintained. Keeping it compatible across Laravel releases,
-improving performance, hardening sensitive-data handling, and building new observability features
-requires ongoing engineering time.
-
-If Spoke saves you debugging time or supports your production workflow, please consider making a
-donation. Your support helps fund:
-
-- Laravel and PHP compatibility updates;
-- performance profiling and optimization;
-- security and privacy improvements;
-- documentation and usability work;
-- new Flight Recorder and monitoring capabilities.
-
-Feedback is always welcome, and donations are never required for personal or non-commercial use.
-
-<p align="center">
-  <a href="https://paypal.me/spoke26">
-    <img src="https://img.shields.io/badge/Support%20Spoke-Donate%20with%20PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="Support Spoke with a PayPal donation">
-  </a>
-</p>
-
-> **Commercial use:** A donation of any amount through
-> [PayPal](https://paypal.me/spoke26) grants the donor a commercial license. Keep the payment receipt
-> as proof of license.
-
-## 📄 License
-
-- **Personal, educational, hobby, and non-commercial use:** free.
-- **Commercial and business use:** requires a commercial license.
-- **Commercial license:** granted with any donation through
-  [paypal.me/spoke26](https://paypal.me/spoke26).
-
-See [LICENSE.md](LICENSE.md) for the complete terms.
 
 ---
 
 <p align="center">
-  Built for Laravel teams who want to understand every request while keeping observability data under their control.
+  Built for Laravel teams who want to understand every request<br>
+  while keeping observability data under their control.
 </p>
 
 <p align="center">

@@ -173,9 +173,6 @@ class HealthReader
         ];
     }
 
-    /**
-     * @return int
-     */
     private function nPlusOneRequestCount(string $date): int
     {
         $count = 0;

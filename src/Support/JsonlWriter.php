@@ -36,10 +36,6 @@ class JsonlWriter
         }
     }
 
-    /**
-     * @param  int|null  $days
-     * @return int
-     */
     public function prune(?int $days = null): int
     {
         $days ??= (int) config('spoke.retention_days', 7);

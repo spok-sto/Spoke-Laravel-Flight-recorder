@@ -10,9 +10,6 @@ class LaravelLogReader
 {
     private const ENTRY_HEADER = '/^\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\] (.+)\.([A-Z]+):\s?(.*)$/';
 
-    /**
-     * Čita Laravel log unazad bez učitavanja celog fajla u memoriju.
-     */
     public function read(
         ?string $file = null,
         ?string $level = null,
@@ -59,9 +56,6 @@ class LaravelLogReader
         ];
     }
 
-    /**
-     * Vraća dostupne Laravel log fajlove sortirane po vremenu izmene.
-     */
     public function availableFiles(): array
     {
         $dir = (string) config('spoke.logs_path');
@@ -82,9 +76,6 @@ class LaravelLogReader
         return $files;
     }
 
-    /**
-     * Bezbedno razrešava log fajl isključivo unutar konfigurisanog direktorijuma.
-     */
     private function logPath(string $file): ?string
     {
         $directory = realpath((string) config('spoke.logs_path'));
@@ -102,9 +93,6 @@ class LaravelLogReader
         return $path;
     }
 
-    /**
-     * Skenira log unazad do popunjavanja stranice ili dostizanja limita po zahtevu.
-     */
     private function scanFile(
         string $path,
         ?string $level,
@@ -259,8 +247,6 @@ class LaravelLogReader
     }
 
     /**
-     * Iterira linije od kraja ka početku uz ograničenu memoriju.
-     *
      * @param  resource  $handle
      */
     private function reverseLines(
@@ -325,9 +311,6 @@ class LaravelLogReader
         }
     }
 
-    /**
-     * Pretvara prikupljene linije u strukturirani log zapis.
-     */
     private function makeEntry(
         array $reverseLines,
         array $header,
@@ -363,9 +346,6 @@ class LaravelLogReader
         ];
     }
 
-    /**
-     * Proverava nivo i tekstualni filter nad jednim zapisom.
-     */
     private function matchesFilters(array $entry, ?string $level, ?string $needle): bool
     {
         if ($level !== null && $entry['level'] !== $level) {
@@ -375,9 +355,6 @@ class LaravelLogReader
         return $needle === null || str_contains(mb_strtolower($entry['_search']), $needle);
     }
 
-    /**
-     * Vraća prazan, ali stabilan API odgovor kada log nije dostupan.
-     */
     private function emptyResult(?string $file, array $files, int $page, int $perPage): array
     {
         return [

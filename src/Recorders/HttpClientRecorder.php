@@ -14,10 +14,6 @@ use Konekt\Spoke\Support\JsonlWriter;
 use Konekt\Spoke\Support\TraceContext;
 use Throwable;
 
-/**
- * Snima odlazne HTTP klijent pozive (Http facade) u http-*.jsonl.
- * Parovanje RequestSending ↔ ResponseReceived ide preko spl_object_id (podržava Http::pool).
- */
 class HttpClientRecorder
 {
     public function __construct(
@@ -33,7 +29,6 @@ class HttpClientRecorder
                 return;
             }
 
-            /** @var TraceContext $trace */
             $trace = app(TraceContext::class);
             $request = $event->request;
 
@@ -58,7 +53,6 @@ class HttpClientRecorder
                 return;
             }
 
-            /** @var TraceContext $trace */
             $trace = app(TraceContext::class);
             $objectId = spl_object_id($event->request);
             $pending = $trace->peekPendingHttp($objectId);
@@ -103,7 +97,6 @@ class HttpClientRecorder
                 return;
             }
 
-            /** @var TraceContext $trace */
             $trace = app(TraceContext::class);
             $objectId = spl_object_id($event->request);
             $pending = $trace->peekPendingHttp($objectId);
@@ -128,10 +121,6 @@ class HttpClientRecorder
     }
 
     /**
-     * U capture režimu puni payloadi idu u odvojen capture-*.jsonl
-     * (da http-*.jsonl ostane mali i brz za čitanje), a glavni zapis
-     * zadržava normalno truncirana tela + "captured" marker.
-     *
      * @param  array<string, mixed>  $record
      * @return array<string, mixed>
      */
@@ -212,11 +201,6 @@ class HttpClientRecorder
         return $out;
     }
 
-    /**
-     * Redakcija osetljivih ključeva u telu (JSON/form) pre trunciranja —
-     * redosled je bitan jer truncirano telo više nije validan JSON.
-     * U capture režimu limit raste na capture.max_body_bytes (ceo payload).
-     */
     private function truncateBody(string $body): ?string
     {
         if ($body === '') {

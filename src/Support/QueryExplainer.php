@@ -7,11 +7,6 @@ namespace Konekt\Spoke\Support;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
-/**
- * Pokreće EXPLAIN / EXPLAIN ANALYZE nad snimljenim SQL-om.
- *
- * ANALYZE je dozvoljen samo za SELECT/WITH. Timeout je obavezan.
- */
 class QueryExplainer
 {
     /**
@@ -178,8 +173,6 @@ class QueryExplainer
     }
 
     /**
-     * Best-effort Query Health iz EXPLAIN JSON / QUERY PLAN redova.
-     *
      * @return array<string, mixed>
      */
     private function healthFromPlan(string $driver, mixed $plan, bool $analyze): array

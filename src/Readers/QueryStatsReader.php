@@ -6,9 +6,6 @@ namespace Konekt\Spoke\Readers;
 
 use Konekt\Spoke\Support\QueryNormalizer;
 
-/**
- * Ranking i regresija SQL upita iz dnevnih queries-*.jsonl fajlova.
- */
 class QueryStatsReader
 {
     /**

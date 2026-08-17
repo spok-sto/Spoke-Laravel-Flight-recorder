@@ -37,11 +37,8 @@ class JsonlWriter
     }
 
     /**
-     * Briše JSONL telemetriju i mail HTML fajlove starije od retention perioda.
-     * Poziva se lenjivo pri prvom upisu, a i iz spoke:prune komande (cron).
-     *
-     * @param  int|null  $days  Override za spoke.retention_days
-     * @return int Broj obrisanih fajlova
+     * @param  int|null  $days
+     * @return int
      */
     public function prune(?int $days = null): int
     {

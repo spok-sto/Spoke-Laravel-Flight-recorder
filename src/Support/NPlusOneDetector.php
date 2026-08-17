@@ -4,14 +4,9 @@ declare(strict_types=1);
 
 namespace Konekt\Spoke\Support;
 
-/**
- * Detekcija N+1 obrazaca nad baferovanim SQL upitima jednog requesta.
- */
 class NPlusOneDetector
 {
     /**
-     * Grupiše normalizovane upite i vraća one koji prelaze prag.
-     *
      * @param  list<array<string, mixed>>  $bufferedQueries
      * @return list<array{normalized_sql: string, count: int, total_ms: float, possible_relation: string|null}>
      */
@@ -21,13 +16,12 @@ class NPlusOneDetector
             return [];
         }
 
-        /** @var array<string, list<array<string, mixed>>> $groups */
         $groups = [];
 
         foreach ($bufferedQueries as $query) {
             $sql = (string) ($query['sql'] ?? '');
 
-            if ($sql === '') {
+            if ($sql === '' || ! $this->isReadQuery($sql)) {
                 continue;
             }
 
@@ -63,9 +57,6 @@ class NPlusOneDetector
         return $detected;
     }
 
-    /**
-     * Best-effort pogađanje tabela.kolona iz WHERE klauzule (nije Eloquent relacija).
-     */
     public function guessRelation(string $normalizedSql): ?string
     {
         if (preg_match(
@@ -85,5 +76,18 @@ class NPlusOneDetector
         }
 
         return null;
+    }
+
+    private function isReadQuery(string $sql): bool
+    {
+        if (preg_match(
+            '/\b(SELECT|WITH|INSERT|UPDATE|DELETE|EXPLAIN|DROP|ALTER|TRUNCATE|CREATE|SHOW)\b/i',
+            $sql,
+            $m
+        )) {
+            return in_array(strtoupper($m[1]), ['SELECT', 'WITH'], true);
+        }
+
+        return false;
     }
 }

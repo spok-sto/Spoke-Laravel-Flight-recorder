@@ -10,18 +10,12 @@ use Illuminate\Console\Scheduling\Event as ScheduledEvent;
 use Konekt\Spoke\Support\JsonlWriter;
 use Throwable;
 
-/**
- * Snima Laravel scheduler taskove u scheduler-*.jsonl.
- */
 class SchedulerRecorder
 {
     public function __construct(private JsonlWriter $writer)
     {
     }
 
-    /**
-     * Uspešno završen scheduled task.
-     */
     public function recordFinished(ScheduledTaskFinished $event): void
     {
         try {
@@ -30,9 +24,6 @@ class SchedulerRecorder
         }
     }
 
-    /**
-     * Scheduled task bacio exception.
-     */
     public function recordFailed(ScheduledTaskFailed $event): void
     {
         try {

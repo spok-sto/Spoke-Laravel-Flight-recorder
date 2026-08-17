@@ -10,22 +10,14 @@ use Konekt\Spoke\Support\JsonlWriter;
 use Symfony\Component\Console\Input\InputInterface;
 use Throwable;
 
-/**
- * Opciono snima artisan komande u commands-*.jsonl.
- * Default je isključen — schedule:run / queue:work su previše bučni.
- */
 class CommandRecorder
 {
-    /** @var array<int, float> */
     private array $startedAt = [];
 
     public function __construct(private JsonlWriter $writer)
     {
     }
 
-    /**
-     * Početak artisan komande (za merenje trajanja).
-     */
     public function recordStarting(CommandStarting $event): void
     {
         try {
@@ -43,9 +35,6 @@ class CommandRecorder
         }
     }
 
-    /**
-     * Završetak artisan komande.
-     */
     public function recordFinished(CommandFinished $event): void
     {
         try {

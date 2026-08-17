@@ -15,22 +15,14 @@ use Konekt\Spoke\Support\JsonlWriter;
 use Konekt\Spoke\Support\TraceContext;
 use Throwable;
 
-/**
- * Snima queue lifecycle (queued / processed / failed) u jobs-*.jsonl.
- * HTTP dispatch se veže na TraceContext; worker čita spoke_trace_id iz payload-a.
- */
 class JobRecorder
 {
-    /** @var array<string, float> */
     private array $processingStarted = [];
 
     public function __construct(private JsonlWriter $writer)
     {
     }
 
-    /**
-     * Ubaci spoke_queued_at / spoke_trace_id u Laravel job payload (čeka + korelacija).
-     */
     public static function registerPayloadHooks(): void
     {
         Queue::createPayloadUsing(static function () {
@@ -60,9 +52,6 @@ class JobRecorder
         });
     }
 
-    /**
-     * Job stavljen na queue (database/redis). SyncQueue ne emituje JobQueued.
-     */
     public function recordQueued(JobQueued $event): void
     {
         try {
@@ -86,9 +75,6 @@ class JobRecorder
         }
     }
 
-    /**
-     * Početak obrade — lokalni start za runtime (Octane: mapa se čisti na processed/failed).
-     */
     public function recordProcessing(JobProcessing $event): void
     {
         try {
@@ -102,9 +88,6 @@ class JobRecorder
         }
     }
 
-    /**
-     * Uspešno završen job.
-     */
     public function recordProcessed(JobProcessed $event): void
     {
         try {
@@ -113,9 +96,6 @@ class JobRecorder
         }
     }
 
-    /**
-     * Job pao (max attempts / fail()).
-     */
     public function recordFailed(JobFailed $event): void
     {
         try {

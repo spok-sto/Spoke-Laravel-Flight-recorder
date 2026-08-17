@@ -4,7 +4,7 @@ return [
 
     'enabled' => env('SPOKE_ENABLED', false),
 
-    'version' => '1.1.1',
+    'version' => '1.1.2',
 
     'path' => env('SPOKE_PATH', 'spoke'),
 
@@ -70,6 +70,7 @@ return [
             'slow_only_ms' => env('SPOKE_QUERIES_SLOW_ONLY_MS', 50),
             'record_cli' => env('SPOKE_RECORD_CLI', false),
             'n_plus_one_threshold' => env('SPOKE_N1_THRESHOLD', 10),
+            'n_plus_one_max_persisted' => 5,
         ],
         'requests' => [
             'enabled' => env('SPOKE_RECORD_REQUESTS', true),
@@ -136,6 +137,8 @@ return [
         'exception_warn' => env('SPOKE_HEALTH_EX_WARN', 10),
         'exception_crit' => env('SPOKE_HEALTH_EX_CRIT', 50),
         'exception_spike_factor' => env('SPOKE_HEALTH_EX_SPIKE', 2.0),
+        'n1_warn' => env('SPOKE_HEALTH_N1_WARN', 1),
+        'n1_crit' => env('SPOKE_HEALTH_N1_CRIT', 20),
     ],
 
     'deploy' => [

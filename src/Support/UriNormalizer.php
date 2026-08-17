@@ -4,14 +4,8 @@ declare(strict_types=1);
 
 namespace Konekt\Spoke\Support;
 
-/**
- * Normalizacija URI-ja za regresiju i exception route grouping.
- */
 class UriNormalizer
 {
-    /**
-     * Skini query string, UUID i numeričke ID-eve.
-     */
     public static function normalize(?string $uri): string
     {
         $uri = explode('?', (string) $uri)[0];

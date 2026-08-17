@@ -50,7 +50,7 @@ class QueryRecorder
             ];
 
             if (! $isCli) {
-                /** @var TraceContext $trace */
+
                 $trace = app(TraceContext::class);
                 $record['trace_id'] = $trace->traceId();
                 $buffered = $record;

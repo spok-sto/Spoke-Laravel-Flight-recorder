@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Spoke — Laravel Dev Monitoring</title>
+    <title>{{ $spokeProduct }}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -233,13 +233,10 @@
             white-space: nowrap;
         }
 
-        .topbar-product {
-            color: var(--text-main);
-            font-weight: 700;
-        }
-
-        .topbar-separator {
-            color: var(--text-dim);
+        .brand-badge-monitor {
+            background: rgba(16, 185, 129, 0.12);
+            color: var(--accent-emerald);
+            border-color: rgba(16, 185, 129, 0.25);
         }
 
         .topbar-actions {
@@ -687,6 +684,28 @@
             color: var(--text-dim);
         }
 
+        .monitor-notice {
+            margin: 0 0 1rem;
+            padding: 0.7rem 0.9rem;
+            border: 1px solid rgba(251, 191, 36, 0.35);
+            background: rgba(251, 191, 36, 0.08);
+            color: var(--accent-amber);
+            border-radius: var(--radius-sm);
+            font-size: 0.8rem;
+            line-height: 1.45;
+        }
+
+        .capture-off-chip {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: rgba(251, 191, 36, 0.12);
+            color: var(--accent-amber);
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            white-space: nowrap;
+        }
+
         .pagination {
             display: flex;
             align-items: center;
@@ -738,7 +757,7 @@
                 </svg>
                 <span>Spoke</span>
             </div>
-            <span class="brand-badge">Dev</span>
+            <span class="brand-badge {{ $debugTools ? '' : 'brand-badge-monitor' }}">{{ $debugTools ? 'Debug' : 'Monitor' }}</span>
         </div>
 
         <nav class="sidebar-nav">
@@ -835,17 +854,19 @@
     <main class="main-wrapper">
         <header class="topbar">
             <div class="topbar-title">
-                <span class="topbar-product">Spoke — Laravel Dev Monitoring</span>
-                <span class="topbar-separator">/</span>
                 <span id="page-title">Server & Metrics</span>
             </div>
 
             <div class="topbar-actions">
+                @if ($debugTools)
                 <button class="btn btn-sm" id="capture-btn" onclick="SpokeApp.toggleCapture()"
                         title="Capture requests and outgoing HTTP">
                     <span id="capture-dot" style="width:8px; height:8px; border-radius:50%; background:var(--text-dim); display:inline-block;"></span>
                     <span id="capture-label">Capture</span>
                 </button>
+                @else
+                <span class="capture-off-chip" title="Full payload capture requires APP_DEBUG=true. Exceptions, slow SQL, failed requests, outbound HTTP and mail still record.">Capture off</span>
+                @endif
 
                 <select class="select" id="auto-refresh-select" onchange="SpokeApp.setAutoRefresh(this.value)">
                     <option value="0">Auto-refresh: Off</option>
@@ -887,6 +908,7 @@
 const SpokeApp = {
     apiBase: @json($apiBase),
     csrfToken: document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+    debugTools: @json($debugTools),
     currentTab: 'server',
     refreshTimer: null,
     refreshInterval: 10,
@@ -927,6 +949,10 @@ const SpokeApp = {
     },
 
     async toggleCapture() {
+        if (!this.debugTools) {
+            this.showToast('Capture requires APP_DEBUG=true.');
+            return;
+        }
         const data = await this.fetchJson('/capture', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1086,6 +1112,20 @@ const SpokeApp = {
         const n = Number(ms);
         if (!Number.isFinite(n)) return '-';
         return Math.round(n) + ' ms';
+    },
+
+    monitorNotice(topic) {
+        if (this.debugTools) return '';
+        const copy = {
+            exceptions: 'APP_DEBUG is off. Exceptions still record. Capture is disabled.',
+            queries: 'APP_DEBUG is off. Slow SQL (≥50ms) and N+1 still record. Fast queries are skipped. EXPLAIN is disabled.',
+            requests: 'APP_DEBUG is off. Errors and sampled requests still record. Full bodies need Capture, which requires APP_DEBUG=true.',
+            http: 'APP_DEBUG is off. Slow or failed outbound HTTP still records. Full bodies need Capture, which requires APP_DEBUG=true.',
+            mails: 'APP_DEBUG is off. Sent mail still records. HTML preview is disabled until APP_DEBUG=true.'
+        };
+        const text = copy[topic];
+        if (!text) return '';
+        return `<div class="monitor-notice" role="status">${text}</div>`;
     },
 
     shortJobName(name) {
@@ -1280,6 +1320,8 @@ const SpokeApp = {
                     <div class="card-header"><span class="card-label">PHP & OPcache</span><span class="badge badge-success">⏱ ${php.uptime || opc.uptime || 'n/a'}</span></div>
                     <div style="display:flex; flex-direction:column; gap:0.5rem; margin-top:0.5rem;">
                         <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted)">PHP Version:</span><span style="font-family:var(--font-mono)">${php.version} (${php.sapi})</span></div>
+                        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted)">APP_DEBUG:</span><span class="badge ${php.debug ? 'badge-warning' : 'badge-success'}">${php.debug ? 'true (debug tools on)' : 'false (monitor only)'}</span></div>
+                        <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted)">APP_ENV:</span><span style="font-family:var(--font-mono)">${this.escapeHtml(php.environment || 'n/a')}</span></div>
                         <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted)">PHP Process Uptime:</span><span style="font-family:var(--font-mono); color:var(--accent-cyan); font-weight:600;">${php.uptime || 'n/a'}</span></div>
                         <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted)">Memory Limit:</span><span style="font-family:var(--font-mono)">${php.memory_limit}</span></div>
                         <div style="display:flex; justify-content:space-between;"><span style="color:var(--text-muted)">OPcache Status:</span><span class="badge ${opc.enabled ? 'badge-success' : 'badge-danger'}">${opc.enabled ? 'Enabled (' + opc.hit_rate_pct + '% hit)' : 'Disabled'}</span></div>
@@ -1521,7 +1563,7 @@ const SpokeApp = {
                     <td style="font-family:var(--font-mono); font-size:0.75rem; color:var(--text-dim);">${this.escapeHtml((g.last_seen || '').split(' ')[1] || g.last_seen || '')}</td>
                 </tr>
             `;
-        }).join('') || `<tr><td colspan="5" class="empty-state">No exceptions recorded for this date.</td></tr>`;
+        }).join('') || `<tr><td colspan="5" class="empty-state">No exceptions recorded for this date.${this.debugTools ? '' : ' Thrown exceptions still record in monitor mode.'}</td></tr>`;
 
         document.getElementById('tab-content').innerHTML = `
             <div class="toolbar">
@@ -1532,6 +1574,7 @@ const SpokeApp = {
                     <input type="text" class="input" placeholder="Search class, message, URI..." value="${this.escapeHtml(s.search)}" oninput="SpokeApp.searchExceptions(this.value)" style="width:260px;">
                 </div>
             </div>
+            ${this.monitorNotice('exceptions')}
             <div class="table-container">
                 <table class="table">
                     <thead>
@@ -1582,6 +1625,7 @@ const SpokeApp = {
                     <input type="text" class="input" placeholder="Search..." value="${this.escapeHtml(s.search)}" oninput="SpokeApp.searchExceptions(this.value)" style="width:240px;">
                 </div>
             </div>
+            ${this.monitorNotice('exceptions')}
             <div class="table-container">
                 <table class="table">
                     <thead>
@@ -1669,7 +1713,7 @@ const SpokeApp = {
 
         let rowsHtml = '';
         if (entries.length === 0) {
-            rowsHtml = `<tr><td colspan="5" class="empty-state">No recorded SQL queries for the selected date.</td></tr>`;
+            rowsHtml = `<tr><td colspan="5" class="empty-state">No recorded SQL queries for the selected date.${this.debugTools ? '' : ' Slow queries (≥50ms) and N+1 still record in monitor mode.'}</td></tr>`;
         } else {
             rowsHtml = entries.map((q, idx) => {
                 const isSlow = q.ms > 100;
@@ -1698,7 +1742,7 @@ const SpokeApp = {
                     <input type="text" class="input" placeholder="Search SQL or URI..." value="${this.escapeHtml(s.search)}" oninput="SpokeApp.searchQueries(this.value)" style="width:260px;">
                 </div>
             </div>
-
+            ${this.monitorNotice('queries')}
             <div class="table-container">
                 <table class="table">
                     <thead>
@@ -1771,6 +1815,7 @@ const SpokeApp = {
                     <input type="text" class="input" placeholder="Search SQL or URI..." value="${this.escapeHtml(s.search)}" oninput="SpokeApp.searchQueries(this.value)" style="width:220px;">
                 </div>
             </div>
+            ${this.monitorNotice('queries')}
             <div class="table-container">
                 <table class="table">
                     <thead>
@@ -1843,8 +1888,10 @@ const SpokeApp = {
             </div>
             <div style="display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap;">
                 <button class="btn btn-sm" onclick="SpokeApp.copyQuerySql()">Copy SQL</button>
-                <button class="btn btn-sm btn-primary" onclick="SpokeApp.explainQuery(false)">EXPLAIN</button>
-                <button class="btn btn-sm btn-danger" onclick="SpokeApp.explainQuery(true)">ANALYZE</button>
+                ${this.debugTools
+                    ? `<button class="btn btn-sm btn-primary" onclick="SpokeApp.explainQuery(false)">EXPLAIN</button>
+                       <button class="btn btn-sm btn-danger" onclick="SpokeApp.explainQuery(true)">ANALYZE</button>`
+                    : `<span class="badge badge-muted">EXPLAIN requires APP_DEBUG=true</span>`}
             </div>
             <div style="margin-bottom:0.5rem; font-weight:600; color:var(--text-muted);">SQL:</div>
             <div class="code-block" style="margin-bottom:1rem; color:var(--accent-cyan);">${this.escapeHtml(q.sql)}</div>
@@ -1864,6 +1911,10 @@ const SpokeApp = {
     async explainQuery(analyze) {
         const q = this.currentQueryDetail;
         if (!q) return;
+        if (!this.debugTools) {
+            this.showToast('EXPLAIN requires APP_DEBUG=true.');
+            return;
+        }
         if (analyze && !confirm('EXPLAIN ANALYZE will execute this SELECT on the live database. Continue?')) {
             return;
         }
@@ -1930,7 +1981,7 @@ const SpokeApp = {
 
         let rowsHtml = '';
         if (entries.length === 0) {
-            rowsHtml = `<tr><td colspan="7" class="empty-state">No recorded HTTP requests for the selected date.</td></tr>`;
+            rowsHtml = `<tr><td colspan="7" class="empty-state">No recorded HTTP requests for the selected date.${this.debugTools ? '' : ' Errors and sampled requests still record in monitor mode.'}</td></tr>`;
         } else {
             rowsHtml = entries.map(r => {
                 const statusBadge = r.status >= 500 ? 'badge-500' : (r.status >= 400 ? 'badge-400' : 'badge-200');
@@ -1961,7 +2012,7 @@ const SpokeApp = {
                     <input type="text" class="input" placeholder="Search URI or status..." value="${this.escapeHtml(s.search)}" oninput="SpokeApp.searchRequests(this.value)" style="width:260px;">
                 </div>
             </div>
-
+            ${this.monitorNotice('requests')}
             <div class="table-container">
                 <table class="table">
                     <thead>
@@ -2147,7 +2198,7 @@ const SpokeApp = {
         let rowsHtml = '';
 
         if (entries.length === 0) {
-            rowsHtml = `<tr><td colspan="6" class="empty-state">No recorded outgoing HTTP calls for the selected date.</td></tr>`;
+            rowsHtml = `<tr><td colspan="6" class="empty-state">No recorded outgoing HTTP calls for the selected date.${this.debugTools ? '' : ' Slow or failed calls still record in monitor mode.'}</td></tr>`;
         } else {
             rowsHtml = entries.map((h, idx) => {
                 const statusBadge = h.failed ? 'badge-danger' : (h.status >= 500 ? 'badge-500' : (h.status >= 400 ? 'badge-400' : 'badge-200'));
@@ -2176,6 +2227,7 @@ const SpokeApp = {
                     <input type="text" class="input" placeholder="Search URL, method, status..." value="${this.escapeHtml(s.search)}" oninput="SpokeApp.searchHttp(this.value)" style="width:280px;">
                 </div>
             </div>
+            ${this.monitorNotice('http')}
             <div class="table-container">
                 <table class="table">
                     <thead>
@@ -2249,7 +2301,7 @@ const SpokeApp = {
 
         let rowsHtml = '';
         if (entries.length === 0) {
-            rowsHtml = `<tr><td colspan="4" class="empty-state">No recorded emails for the selected date.</td></tr>`;
+            rowsHtml = `<tr><td colspan="4" class="empty-state">No recorded emails for the selected date.${this.debugTools ? '' : ' Sent mail still records in monitor mode.'}</td></tr>`;
         } else {
             rowsHtml = entries.map((m, idx) => `
                 <tr style="cursor:pointer;" onclick="SpokeApp.showMailDetail(${idx})">
@@ -2272,7 +2324,7 @@ const SpokeApp = {
                     <input type="text" class="input" placeholder="Search recipient or subject..." value="${this.escapeHtml(s.search)}" oninput="SpokeApp.searchMails(this.value)" style="width:260px;">
                 </div>
             </div>
-
+            ${this.monitorNotice('mails')}
             <div class="table-container">
                 <table class="table">
                     <thead>
@@ -2312,8 +2364,10 @@ const SpokeApp = {
         const m = this.currentMails[idx];
         if (!m) return;
         let bodyHtml = '';
-        if (m.body_file) {
+        if (m.body_file && this.debugTools) {
             bodyHtml = `<iframe sandbox referrerpolicy="no-referrer" src="${this.apiBase}/mails/body?file=${encodeURIComponent(m.body_file)}" style="width:100%; height:450px; border:1px solid var(--border); border-radius:var(--radius-sm); background:#fff;"></iframe>`;
+        } else if (m.body_file) {
+            bodyHtml = `<div class="empty-state">Mail preview requires APP_DEBUG=true.</div>`;
         } else {
             bodyHtml = `<div class="empty-state">No saved email body.</div>`;
         }
@@ -2765,7 +2819,9 @@ const SpokeApp = {
 
         const [infoData, keysData] = await Promise.all([
             this.fetchJson('/redis'),
-            this.fetchJson(`/redis/keys?connection=${encodeURIComponent(this.state.redis.connection)}&pattern=${encodeURIComponent(this.state.redis.pattern)}`)
+            this.debugTools
+                ? this.fetchJson(`/redis/keys?connection=${encodeURIComponent(this.state.redis.connection)}&pattern=${encodeURIComponent(this.state.redis.pattern)}`)
+                : Promise.resolve(null)
         ]);
 
         if (!infoData) return;
@@ -2798,26 +2854,68 @@ const SpokeApp = {
         const availableConns = keysData?.connections || conns.map(c => c.name);
         const connSelectOptions = availableConns.map(c => `<option value="${c}" ${c === this.state.redis.connection ? 'selected' : ''}>${c}</option>`).join('');
 
-        const keysList = keysData?.keys || [];
-        let keysRows = '';
-
-        if (keysList.length === 0) {
-            keysRows = `<tr><td colspan="4" class="empty-state">No keys found matching pattern <code>${this.escapeHtml(this.state.redis.pattern)}</code></td></tr>`;
+        let explorerHtml = '';
+        if (!this.debugTools) {
+            explorerHtml = `
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header" style="margin-bottom:0.75rem;">
+                    <span class="card-label" style="font-size:0.85rem; color:var(--text-main);">Redis Key Explorer</span>
+                    <span class="badge badge-muted">APP_DEBUG</span>
+                </div>
+                <div class="empty-state">Key inspection requires APP_DEBUG=true. Recorded commands and INFO remain available.</div>
+            </div>`;
         } else {
-            keysRows = keysList.map(k => {
-                const ttlBadge = k.ttl === -1 ? '<span class="badge badge-muted">No expiry</span>' : (k.ttl === -2 ? '<span class="badge badge-danger">Expired</span>' : `<span class="badge badge-info">${k.ttl}s</span>`);
-                const typeBadge = `<span class="badge badge-purple">${k.type.toUpperCase()}</span>`;
-                return `
-                    <tr style="cursor:pointer;" data-key="${this.escapeHtml(k.key)}" onclick="SpokeApp.inspectRedisKey(this.dataset.key)">
-                        <td style="font-family:var(--font-mono); font-weight:600; color:var(--accent-cyan);">${this.escapeHtml(k.key)}</td>
-                        <td style="width:100px;">${typeBadge}</td>
-                        <td style="width:120px;">${ttlBadge}</td>
-                        <td style="width:90px; text-align:right;">
-                            <button class="btn btn-sm btn-primary">Inspect</button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+            const keysList = keysData?.keys || [];
+            let keysRows = '';
+
+            if (keysList.length === 0) {
+                keysRows = `<tr><td colspan="4" class="empty-state">No keys found matching pattern <code>${this.escapeHtml(this.state.redis.pattern)}</code></td></tr>`;
+            } else {
+                keysRows = keysList.map(k => {
+                    const ttlBadge = k.ttl === -1 ? '<span class="badge badge-muted">No expiry</span>' : (k.ttl === -2 ? '<span class="badge badge-danger">Expired</span>' : `<span class="badge badge-info">${k.ttl}s</span>`);
+                    const typeBadge = `<span class="badge badge-purple">${k.type.toUpperCase()}</span>`;
+                    return `
+                        <tr style="cursor:pointer;" data-key="${this.escapeHtml(k.key)}" onclick="SpokeApp.inspectRedisKey(this.dataset.key)">
+                            <td style="font-family:var(--font-mono); font-weight:600; color:var(--accent-cyan);">${this.escapeHtml(k.key)}</td>
+                            <td style="width:100px;">${typeBadge}</td>
+                            <td style="width:120px;">${ttlBadge}</td>
+                            <td style="width:90px; text-align:right;">
+                                <button class="btn btn-sm btn-primary">Inspect</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            explorerHtml = `
+            <div class="card" style="margin-bottom:1.5rem;">
+                <div class="card-header" style="margin-bottom:0.75rem;">
+                    <span class="card-label" style="font-size:0.85rem; color:var(--text-main);">🔍 Redis Key Explorer (Reader)</span>
+                    <span class="badge badge-muted">${keysData?.has_more ? (keysData.count + '+') : (keysData?.count || 0)} matched keys</span>
+                </div>
+                <div class="toolbar" style="margin-bottom:0.75rem;">
+                    <div class="toolbar-group">
+                        <select class="select" onchange="SpokeApp.setRedisConnection(this.value)">
+                            ${connSelectOptions}
+                        </select>
+                        <input type="text" class="input" placeholder="Pattern (e.g. *, cache:*, *user*)" value="${this.escapeHtml(this.state.redis.pattern)}" oninput="SpokeApp.searchRedisKeys(this.value)" style="width:280px;">
+                    </div>
+                </div>
+
+                <div class="table-container" style="max-height:400px; overflow-y:auto;">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Key Name</th>
+                                <th>Type</th>
+                                <th>TTL</th>
+                                <th style="text-align:right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>${keysRows}</tbody>
+                    </table>
+                </div>
+            </div>`;
         }
 
         const html = `
@@ -2848,34 +2946,7 @@ const SpokeApp = {
                 </div>
             </div>
 
-            <div class="card" style="margin-bottom:1.5rem;">
-                <div class="card-header" style="margin-bottom:0.75rem;">
-                    <span class="card-label" style="font-size:0.85rem; color:var(--text-main);">🔍 Redis Key Explorer (Reader)</span>
-                    <span class="badge badge-muted">${keysData?.has_more ? (keysData.count + '+') : (keysData?.count || 0)} matched keys</span>
-                </div>
-                <div class="toolbar" style="margin-bottom:0.75rem;">
-                    <div class="toolbar-group">
-                        <select class="select" onchange="SpokeApp.setRedisConnection(this.value)">
-                            ${connSelectOptions}
-                        </select>
-                        <input type="text" class="input" placeholder="Pattern (e.g. *, cache:*, *user*)" value="${this.escapeHtml(this.state.redis.pattern)}" oninput="SpokeApp.searchRedisKeys(this.value)" style="width:280px;">
-                    </div>
-                </div>
-
-                <div class="table-container" style="max-height:400px; overflow-y:auto;">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Key Name</th>
-                                <th>Type</th>
-                                <th>TTL</th>
-                                <th style="text-align:right;">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>${keysRows}</tbody>
-                    </table>
-                </div>
-            </div>
+            ${explorerHtml}
 
             <div class="table-container">
                 <div style="padding:0.75rem 1rem; font-weight:600; border-bottom:1px solid var(--border); color:var(--text-muted); text-transform:uppercase; font-size:0.75rem;">
@@ -2996,6 +3067,10 @@ const SpokeApp = {
     },
 
     async inspectRedisKey(key) {
+        if (!this.debugTools) {
+            this.showToast('Redis key inspection requires APP_DEBUG=true.');
+            return;
+        }
         const conn = this.state.redis.connection;
         const res = await this.fetchJson(`/redis/key?connection=${encodeURIComponent(conn)}&key=${encodeURIComponent(key)}`);
         if (!res || !res.ok) {

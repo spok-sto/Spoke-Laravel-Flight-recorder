@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Konekt\Spoke\Support;
 
-/**
- * Čitanje dnevnih JSONL fajlova (bounded tail).
- */
 class JsonlFile
 {
     /**
@@ -60,8 +57,6 @@ class JsonlFile
     }
 
     /**
-     * Poslednji validan JSON objekat u fajlu.
-     *
      * @return array<string, mixed>|null
      */
     public static function lastRow(string $file): ?array

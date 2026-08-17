@@ -30,6 +30,7 @@ Unauthorized IPs and denied Gate requests receive `404` to reduce route enumerat
 - HTTP Basic Auth enabled when Spoke is turned on
 - incoming request bodies off
 - outgoing HTTP bodies truncated and redacted
+- Capture Mode, EXPLAIN, Redis inspect, and mail preview require `APP_DEBUG=true`
 - Capture Mode expires automatically
 - sensitive headers and JSON/form keys are redacted before write
 
@@ -56,6 +57,7 @@ fastcgi_param HTTP_AUTHORIZATION $http_authorization;
 - restrict `SPOKE_ALLOWED_IPS`
 - define a host `viewSpoke` Gate
 - keep request-body recording off unless needed
+- keep `APP_DEBUG=false` in production so EXPLAIN, Capture, Redis inspect, and mail preview stay off
 - use Capture Mode only for short debugging windows
 - review `redact_keys` for domain-specific secrets
 - schedule `php artisan spoke:prune`

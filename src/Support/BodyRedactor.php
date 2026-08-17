@@ -6,21 +6,12 @@ namespace Konekt\Spoke\Support;
 
 use Throwable;
 
-/**
- * Redakcija osetljivih vrednosti u HTTP telima pre upisa u JSONL.
- * Podržava JSON i form-urlencoded tela; ostala tela vraća nepromenjena.
- */
 class BodyRedactor
 {
-    /**
-     * Iznad ovog limita telo se ne parsira (zaštita od skupog json_decode).
-     */
     private const MAX_PARSE_BYTES = 1048576;
 
     /**
-     * Redakcija osetljivih ključeva u sirovom HTTP telu.
-     *
-     * @param  list<string>  $keys  Osetljivi ključevi (case-insensitive)
+     * @param  list<string>  $keys
      */
     public static function redact(string $body, array $keys): string
     {
@@ -61,8 +52,6 @@ class BodyRedactor
     }
 
     /**
-     * Rekurzivna redakcija ključeva u već parsiranom nizu (input payload).
-     *
      * @param  array<array-key, mixed>  $data
      * @param  list<string>  $keys
      * @return array<array-key, mixed>

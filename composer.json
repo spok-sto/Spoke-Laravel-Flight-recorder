@@ -4,7 +4,7 @@
     "type": "library",
     "license": "proprietary",
     "homepage": "https://github.com/spok-sto/spoke",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "keywords": [
         "laravel",
         "observability",

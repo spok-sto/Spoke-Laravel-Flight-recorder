@@ -7,9 +7,6 @@ namespace Konekt\Spoke\Readers;
 use Konekt\Spoke\Support\JsonlFile;
 use Konekt\Spoke\Support\UriNormalizer;
 
-/**
- * P95 regresija HTTP requesta po normalizovanom URI-ju.
- */
 class RequestStatsReader
 {
     /**

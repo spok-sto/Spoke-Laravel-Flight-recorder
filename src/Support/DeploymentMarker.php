@@ -6,18 +6,12 @@ namespace Konekt\Spoke\Support;
 
 use Throwable;
 
-/**
- * Upisuje deploy marker u deploys-*.jsonl kad se promeni commit/verzija.
- */
 class DeploymentMarker
 {
     public function __construct(private JsonlWriter $writer)
     {
     }
 
-    /**
-     * Upisi marker samo ako se identitet aplikacije promenio.
-     */
     public function recordIfChanged(): bool
     {
         try {
@@ -73,8 +67,6 @@ class DeploymentMarker
     }
 
     /**
-     * Najnoviji deploy marker (preko retention prozora).
-     *
      * @return array<string, mixed>|null
      */
     public function latest(): ?array

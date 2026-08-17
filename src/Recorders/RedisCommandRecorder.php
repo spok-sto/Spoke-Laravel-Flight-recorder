@@ -9,9 +9,6 @@ use Konekt\Spoke\Support\JsonlWriter;
 use Konekt\Spoke\Support\TraceContext;
 use Throwable;
 
-/**
- * Snima Redis komande u redis-*.jsonl (isti pattern kao QueryRecorder).
- */
 class RedisCommandRecorder
 {
     public function __construct(private JsonlWriter $writer)
@@ -35,7 +32,6 @@ class RedisCommandRecorder
                 || $slowOnly === ''
                 || $ms >= (float) $slowOnly;
 
-            /** @var TraceContext $trace */
             $trace = app(TraceContext::class);
 
             $record = [

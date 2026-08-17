@@ -95,12 +95,6 @@ class SpokeServiceProvider extends ServiceProvider
         }
     }
 
-    /**
-     * Default viewSpoke gate — koristi se samo ako host aplikacija ne definiše
-     * sopstveni Gate::define('viewSpoke', ...) pre boot-a ovog provider-a.
-     * Vraća true kad je Basic Auth uključen (on je tada primarna zaštita),
-     * inače dozvoljava pristup samo u lokalnom/dev okruženju.
-     */
     protected function registerGate(): void
     {
         if (Gate::has('viewSpoke')) {
@@ -197,9 +191,6 @@ class SpokeServiceProvider extends ServiceProvider
         }
     }
 
-    /**
-     * Redis event listener — fail-safe ako Redis nije konfigurisan.
-     */
     protected function registerRedisRecorder(): void
     {
         try {

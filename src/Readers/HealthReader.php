@@ -8,9 +8,6 @@ use Konekt\Spoke\Support\DeploymentMarker;
 use Konekt\Spoke\Support\JsonlFile;
 use Throwable;
 
-/**
- * Application health, in-dashboard alerti i regresije — bez outbound notifikacija.
- */
 class HealthReader
 {
     public function __construct(
@@ -112,6 +109,27 @@ class HealthReader
             $alerts[] = $this->alert($jobStatus, 'failed_jobs', $failedJobs . ' failed jobs in the queue.');
         }
 
+        $n1Count = $this->nPlusOneRequestCount($date);
+        $n1Warn = (int) config('spoke.health.n1_warn', 1);
+        $n1Crit = (int) config('spoke.health.n1_crit', 20);
+        $n1Status = $n1Count >= $n1Crit ? 'crit' : ($n1Count >= $n1Warn ? 'warn' : 'ok');
+        $n1Label = $n1Count === 1 ? '1 request' : $n1Count . ' requests';
+
+        $checks[] = [
+            'key' => 'n_plus_one',
+            'label' => 'N+1 queries',
+            'status' => $n1Status,
+            'value' => $n1Label . ' today',
+        ];
+
+        if ($n1Status !== 'ok') {
+            $alerts[] = $this->alert(
+                $n1Status,
+                'n_plus_one',
+                $n1Label . ' with possible N+1 today.'
+            );
+        }
+
         foreach (array_slice($requestReg['data'], 0, 5) as $row) {
             $alerts[] = $this->alert(
                 'warn',
@@ -153,6 +171,24 @@ class HealthReader
                 'generated_at' => now()->format('Y-m-d H:i:s'),
             ],
         ];
+    }
+
+    /**
+     * @return int
+     */
+    private function nPlusOneRequestCount(string $date): int
+    {
+        $count = 0;
+
+        foreach (JsonlFile::rows(JsonlFile::path('requests', $date)) as $row) {
+            $summary = $row['summary'] ?? null;
+
+            if (is_array($summary) && (int) ($summary['n_plus_one_count'] ?? 0) > 0) {
+                $count++;
+            }
+        }
+
+        return $count;
     }
 
     /**

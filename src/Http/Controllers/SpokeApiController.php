@@ -249,9 +249,6 @@ class SpokeApiController extends Controller
         return response()->json($capture->state());
     }
 
-    /**
-     * Uključuje/isključuje full payload capture režim (dugme u dashboardu).
-     */
     public function captureToggle(Request $request, CaptureMode $capture): JsonResponse
     {
         $state = $request->boolean('active')
@@ -261,9 +258,6 @@ class SpokeApiController extends Controller
         return response()->json($state);
     }
 
-    /**
-     * Puni payloadi iz capture-*.jsonl — po trace_id ili paginirana lista.
-     */
     public function capturePayloads(Request $request, JsonlReader $reader): JsonResponse
     {
         return response()->json($reader->read(

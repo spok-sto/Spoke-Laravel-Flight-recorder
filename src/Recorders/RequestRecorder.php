@@ -33,7 +33,6 @@ class RequestRecorder
                 }
             }
 
-            /** @var TraceContext $trace */
             $trace = app(TraceContext::class);
             $traceId = $trace->traceId();
             $status = $event->response->getStatusCode();
@@ -175,14 +174,14 @@ class RequestRecorder
     }
 
     /**
-     * Upisuje baferovane upite koji nisu već snimljeni, a deo su N+1 grupe
-     * (spore upite QueryRecorder već upisuje odmah).
-     *
      * @param  list<array<string, mixed>>  $queries
      * @param  array<string, true>  $nPlusOneSql
      */
     private function persistRemainingQueries(array $queries, array $nPlusOneSql): void
     {
+        $maxPersisted = max(0, (int) config('spoke.recorders.queries.n_plus_one_max_persisted', 5));
+        $written = [];
+
         foreach ($queries as $query) {
             if (! empty($query['already_written'])) {
                 continue;
@@ -191,6 +190,12 @@ class RequestRecorder
             $normalized = QueryNormalizer::normalize((string) ($query['sql'] ?? ''));
 
             if (! isset($nPlusOneSql[$normalized])) {
+                continue;
+            }
+
+            $written[$normalized] = ($written[$normalized] ?? 0) + 1;
+
+            if ($written[$normalized] > $maxPersisted) {
                 continue;
             }
 
@@ -252,10 +257,6 @@ class RequestRecorder
         }
     }
 
-    /**
-     * Sampling uspešnih requesta — greške (status ≥ 400), requesti sa
-     * exception-ima i capture režim se UVEK snimaju, ostali po sample_rate.
-     */
     private function sampledOut(int $status, TraceContext $trace): bool
     {
         $rate = (float) config('spoke.recorders.requests.sample_rate', 1.0);
@@ -267,13 +268,6 @@ class RequestRecorder
         return (mt_rand() / mt_getrandmax()) >= $rate;
     }
 
-    /**
-     * Snima telo requesta kad je record_body uključen I request je greška
-     * (status ≥ 400), ili za SVE requeste dok je capture režim aktivan.
-     * Samo JSON/form input (nikad multipart/upload), osetljivi ključevi
-     * su UVEK redaktovani, truncirano na record_body_max_bytes
-     * (u capture režimu na capture.max_body_bytes).
-     */
     private function captureBody(RequestHandled $event, int $status): ?string
     {
         $captureActive = $this->capture->active();

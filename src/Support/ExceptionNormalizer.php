@@ -6,14 +6,8 @@ namespace Konekt\Spoke\Support;
 
 use Throwable;
 
-/**
- * Fingerprint exception-a za grouping (klasa + normalizovana poruka + file:line).
- */
 class ExceptionNormalizer
 {
-    /**
-     * Ukloni volatile delove poruke (ID, UUID, brojevi, quoted stringovi).
-     */
     public static function normalizeMessage(string $message): string
     {
         $message = preg_replace(
@@ -29,10 +23,6 @@ class ExceptionNormalizer
         return mb_substr($message, 0, 400);
     }
 
-    /**
-     * Mesto bacanja (file:line) — caller stack se namerno ne koristi
-     * da ista greška iz različitih requesta ostane u istoj grupi.
-     */
     public static function stackFingerprint(Throwable $exception): string
     {
         $file = str_replace('\\', '/', $exception->getFile());
@@ -40,9 +30,6 @@ class ExceptionNormalizer
         return sha1($file . ':' . $exception->getLine());
     }
 
-    /**
-     * Stabilan fingerprint za Exception Center grouping.
-     */
     public static function fingerprint(Throwable $exception): string
     {
         return sha1(
@@ -55,8 +42,6 @@ class ExceptionNormalizer
     }
 
     /**
-     * Fallback kad JSONL red nema sačuvan fingerprint.
-     *
      * @param  array<string, mixed>  $row
      */
     public static function fingerprintFromRow(array $row): string

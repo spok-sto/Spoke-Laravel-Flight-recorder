@@ -6,23 +6,19 @@ namespace Konekt\Spoke\Support;
 
 use Throwable;
 
-/**
- * Privremeni "full payload capture" režim — uključuje se dugmetom u dashboardu.
- * Dok je aktivan, recorderi snimaju cele payloade (request body za sve requeste,
- * puna tela za outgoing HTTP), i dalje uz redakciju osetljivih ključeva.
- * Stanje živi u flag fajlu (bez baze) i automatski ističe posle TTL-a.
- */
 class CaptureMode
 {
     private ?bool $memoized = null;
 
     /**
-     * Uključuje capture režim sa automatskim istekom.
-     *
      * @return array{active: bool, expires_at: string|null}
      */
     public function enable(?int $minutes = null): array
     {
+        if (! DebugTools::enabled()) {
+            return $this->state();
+        }
+
         $minutes ??= (int) config('spoke.capture.ttl_minutes', 60);
         $expiresAt = time() + max(1, $minutes) * 60;
 
@@ -50,12 +46,12 @@ class CaptureMode
         return $this->state();
     }
 
-    /**
-     * Da li je capture aktivan — memoizovano po procesu/requestu
-     * da recorderi ne čitaju flag fajl za svaki event.
-     */
     public function active(): bool
     {
+        if (! DebugTools::enabled()) {
+            return false;
+        }
+
         if ($this->memoized !== null) {
             return $this->memoized;
         }
@@ -68,6 +64,13 @@ class CaptureMode
      */
     public function state(): array
     {
+        if (! DebugTools::enabled()) {
+            return [
+                'active' => false,
+                'expires_at' => null,
+            ];
+        }
+
         $expiresAt = $this->expiresAt();
         $active = $expiresAt > time();
 

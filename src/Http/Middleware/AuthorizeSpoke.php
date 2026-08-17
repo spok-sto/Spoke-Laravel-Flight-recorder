@@ -11,11 +11,6 @@ use Symfony\Component\HttpFoundation\IpUtils;
 
 class AuthorizeSpoke
 {
-    /**
-     * IP allowlist, zatim Basic Auth (ako je uključen), zatim viewSpoke Gate.
-     * Gate se proverava uvek — Basic Auth sam po sebi ne sme da zaobiđe
-     * autorizaciju koju host aplikacija definiše preko Gate::define('viewSpoke', ...).
-     */
     public function handle(Request $request, Closure $next)
     {
         if (! $this->ipAllowed($request)) {

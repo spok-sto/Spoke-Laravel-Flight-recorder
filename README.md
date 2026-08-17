@@ -196,8 +196,8 @@ them, and surfaces the pattern in Flight Recorder.
 
 ### EXPLAIN
 
-`EXPLAIN` is available for recorded SQL. PostgreSQL `EXPLAIN ANALYZE` is guarded
-and allowed only for `SELECT` / `WITH`.
+`EXPLAIN` is available for recorded SQL when `APP_DEBUG=true`. PostgreSQL
+`EXPLAIN ANALYZE` is guarded and allowed only for `SELECT` / `WITH`.
 
 **EXPLAIN ANALYZE is never executed automatically.**
 
@@ -212,8 +212,8 @@ runtime. Redis recording uses safe `SCAN` inspection, never blocking `KEYS`.
 
 ## Capture Mode — deep diagnostics when you need them
 
-Turn on detailed redacted payload capture for a limited debugging window. Spoke
-automatically switches it off.
+Turn on detailed redacted payload capture for a limited debugging window.
+Requires `APP_DEBUG=true`. Spoke automatically switches it off.
 
 - captures incoming request and outgoing HTTP bodies
 - writes them to a separate `capture-*.jsonl` file
@@ -298,7 +298,7 @@ SPOKE_ALLOWED_IPS=127.0.0.1,::1
 - a host-defined `viewSpoke` Gate
 - sampling and slow-only thresholds
 - short retention
-- Capture Mode only when you are actively debugging
+- Capture Mode only when `APP_DEBUG=true` and you are actively debugging
 
 Supported databases: PostgreSQL and MySQL/MariaDB.  
 Queue inspection: Laravel **database** and **Redis** transports.

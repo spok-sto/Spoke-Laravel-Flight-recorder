@@ -8,9 +8,6 @@ use Konekt\Spoke\Support\ExceptionNormalizer;
 use Konekt\Spoke\Support\JsonlFile;
 use Konekt\Spoke\Support\UriNormalizer;
 
-/**
- * Exception Center — grouping po fingerprintu iz exceptions-*.jsonl.
- */
 class ExceptionStatsReader
 {
     /**

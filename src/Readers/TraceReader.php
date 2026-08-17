@@ -4,15 +4,9 @@ declare(strict_types=1);
 
 namespace Konekt\Spoke\Readers;
 
-/**
- * Sastavlja jedan request trace iz dnevnih JSONL fajlova
- * (requests/queries/redis/http/jobs/exceptions).
- */
 class TraceReader
 {
     /**
-     * Pronađi request i sve povezane telemetry redove za dati trace_id.
-     *
      * @return array{
      *     found: bool,
      *     date: string,
@@ -87,9 +81,6 @@ class TraceReader
     }
 
     /**
-     * Puni tela iz capture-*.jsonl ubacuje u request/http zapise
-     * da Flight Recorder prikaže payload bez zasebnog dugmeta.
-     *
      * @param  array<string, mixed>|null  $request
      * @param  list<array<string, mixed>>  $http
      * @param  list<array<string, mixed>>  $payloads

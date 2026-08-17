@@ -252,6 +252,8 @@ class ServerInfoReader
         $uptimeSec = $this->detectPhpUptime();
 
         return [
+            'debug' => (bool) config('app.debug'),
+            'environment' => app()->environment(),
             'version' => PHP_VERSION,
             'sapi' => PHP_SAPI,
             'memory_limit' => ini_get('memory_limit'),

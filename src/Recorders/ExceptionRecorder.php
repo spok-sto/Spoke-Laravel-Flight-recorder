@@ -10,18 +10,12 @@ use Konekt\Spoke\Support\JsonlWriter;
 use Konekt\Spoke\Support\TraceContext;
 use Throwable;
 
-/**
- * Snima exception iz log konteksta (MessageLogged) u exceptions-*.jsonl.
- */
 class ExceptionRecorder
 {
     public function __construct(private JsonlWriter $writer)
     {
     }
 
-    /**
-     * Uhvati Throwable iz log context-a (Laravel ExceptionHandler).
-     */
     public function record(MessageLogged $event): void
     {
         try {

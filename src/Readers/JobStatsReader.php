@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace Konekt\Spoke\Readers;
 
-/**
- * Throughput, runtime, wait i failed analitika iz jobs-*.jsonl.
- */
 class JobStatsReader
 {
     /**

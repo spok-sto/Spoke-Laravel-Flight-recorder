@@ -15,10 +15,6 @@
 </p>
 
 <p align="center">
-  Requires PHP 8.1+ and Laravel 9.52–13.
-</p>
-
-<p align="center">
   <a href="https://github.com/spok-sto/spoke">
     <img src="https://img.shields.io/github/stars/spok-sto/spoke?style=flat-square&logo=github&label=Stars" alt="GitHub stars">
   </a>

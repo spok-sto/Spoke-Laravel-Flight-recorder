@@ -1,4 +1,4 @@
-# Spoke
+# Spoke 1.1  Laravel Flight recorder
 
 <p align="center">
   <strong>One request. One trace. No telemetry database.</strong>

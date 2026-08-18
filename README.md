@@ -1,4 +1,4 @@
-# Spoke
+# Spoke 1.2.0 Laravel Flight control
 
 <p align="center">
   <strong>One request. One trace. No telemetry database.</strong>
@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  Flight Recorder · SQL Intelligence · N+1 Detection · Exceptions · HTTP · Queues · Redis · Server Health
+  Flight Recorder · SQL Intelligence · N+1 Detection · Exceptions · HTTP · Queues · Mail · Redis · Server Health
 </p>
 
 <p align="center">
@@ -32,6 +32,18 @@
     <img src="docs/spoke.png" alt="Spoke dashboard — health score, alerts, SQL regressions, queue failures, and server metrics" width="100%">
   </a>
 </p>
+
+---
+
+## What's new in 1.2.0
+
+- Job Details popup on Pending, Failed and History — redacted constructor payload, same interaction as Flight Recorder
+- Mail HTML preview stays available in monitor mode (`APP_DEBUG=false`)
+- N+1 detection ignores INSERT/UPDATE loops, caps persisted examples, and alerts on Health
+- Capture, EXPLAIN and Redis inspect stay behind `APP_DEBUG=true`
+- Requests open Flight Recorder from the row click — no extra button
+- Requests → Trends: p95 per route across retained days, with sparkline and change indicator
+- Server → History: optional server metrics sampling and daily rollups (off by default)
 
 ---
 
@@ -103,7 +115,7 @@ can rejoin the original request.
 | 🐘 | **SQL Intelligence** | Find slow, repeated and regressed queries |
 | 💥 | **Exception Center** | Group failures and trace them back to requests |
 | 🌐 | **HTTP Monitoring** | Find slow or failed external API calls |
-| ⚙️ | **Queue History** | Track queue wait time, runtime and failures |
+| ⚙️ | **Queue Jobs** | Inspect pending, failed and history jobs, including redacted payload |
 | 🔴 | **Redis Tools** | Inspect Redis activity and keys safely |
 | 📅 | **Scheduler** | See completed and failed scheduled tasks |
 | 🖥️ | **Server Health** | Monitor PHP, DB, Redis, CPU, RAM and disk |
@@ -150,7 +162,12 @@ your server.
 | **Focus** | Request diagnostics | Event inspection | Aggregated metrics | Managed monitoring |
 | **Self-hosted** | Yes | Yes | Yes | No |
 | **Request correlation** | Core concept | Entry-based | Not the primary purpose | Yes |
+| **Flight Recorder (one request, one timeline)** | Yes | Separate entries | No | Yes (hosted) |
+| **SQL EXPLAIN from the dashboard** | Yes | No | No | No |
+| **Route p95 trends without a metrics DB** | Yes | No | Pulse tables | Yes (hosted) |
 | **Telemetry tables in the app DB** | No | Yes | Uses app storage | No |
+| **Server history (CPU / RAM / disk)** | Yes | No | Yes (app DB) | Yes (hosted) |
+| **Daily rollups without a metrics DB** | Yes | No | No | N/A |
 | **Managed SaaS** | No | No | No | Yes |
 
 Spoke and Telescope overlap in several areas, but they are optimized for
@@ -201,10 +218,39 @@ them, and surfaces the pattern in Flight Recorder.
 
 Outgoing HTTP calls persist when they are slow or failed. Sensitive headers and
 JSON/form keys are redacted before write. Successful incoming requests can be
-sampled; errors and exceptions are always retained.
+sampled; errors and exceptions are always retained. Requests → Trends shows
+p95 per route across retained days.
 
-Queue history covers pending, processed and failed jobs, including wait time and
-runtime. Redis recording uses safe `SCAN` inspection, never blocking `KEYS`.
+Queue Jobs covers pending, processed and failed work, including wait time and
+runtime. Click a row to open Job Details with a redacted payload. Redis
+recording uses safe `SCAN` inspection, never blocking `KEYS`. Mail HTML preview
+works in monitor mode; Capture, EXPLAIN and Redis key inspect require
+`APP_DEBUG=true`.
+
+## Server history — optional, off by default
+
+Server info is a live snapshot, so history only exists if something records it.
+Two opt-in switches add that, and both are disabled unless you enable them:
+
+```env
+SPOKE_METRICS_ENABLED=true
+SPOKE_ROLLUP_ENABLED=true
+```
+
+```php
+$schedule->command('spoke:sample')->everyMinute();
+$schedule->command('spoke:rollup')->dailyAt('00:10');
+```
+
+`spoke:sample` writes one compact line per sample to `metrics-*.jsonl` — CPU load,
+memory, disk, DB connections and cache hit, Redis memory and hit rate, pending and
+failed jobs. Server → History charts it over `1h`, `24h` and `7d`. Cumulative
+counters are charted as deltas, and OPcache is sampled from the web process
+(throttled to once a minute) because the CLI has its own OPcache.
+
+`spoke:rollup` aggregates one day into `rollups/daily-YYYY-MM.jsonl` with its own
+retention, so daily trends outlive the raw retention window. Re-running a date
+replaces its row.
 
 ## Capture Mode — deep diagnostics when you need them
 
@@ -248,6 +294,8 @@ storage/logs/spoke/
 ├── redis-2026-08-15.jsonl
 ├── scheduler-2026-08-15.jsonl
 ├── capture-2026-08-15.jsonl
+├── metrics-2026-08-15.jsonl
+├── rollups/
 └── mails/
 ```
 
@@ -272,6 +320,9 @@ php artisan spoke:prune --days=3
 ```php
 $schedule->command('spoke:prune')->daily();
 ```
+
+Metrics and rollups keep their own retention (`SPOKE_METRICS_RETENTION_DAYS`,
+`SPOKE_ROLLUP_RETENTION_DAYS`) and are pruned by the same command.
 
 Measured overhead numbers will be published here once a documented benchmark
 exists. Until then, treat “lightweight” as a design goal, not a published result.

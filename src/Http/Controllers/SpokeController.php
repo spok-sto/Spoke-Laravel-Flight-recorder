@@ -17,7 +17,7 @@ class SpokeController extends Controller
         return view('spoke::index', [
             'apiBase' => url(config('spoke.path') . '/api'),
             'spokeVersion' => $version,
-            'spokeProduct' => 'Spoke v' . $version . ' Laravel Debugging & Monitoring',
+            'spokeProduct' => 'Spoke ' . $version . ' Laravel Flight control',
             'debugTools' => DebugTools::enabled(),
         ]);
     }

@@ -53,6 +53,9 @@ class RedisInfoReader
                 'uptime_seconds' => $uptimeSeconds,
                 'uptime_days' => $flat['uptime_in_days'] ?? null,
                 'used_memory_human' => $flat['used_memory_human'] ?? null,
+                'used_memory_mb' => isset($flat['used_memory'])
+                    ? round((int) $flat['used_memory'] / 1048576, 1)
+                    : null,
                 'used_memory_peak_human' => $flat['used_memory_peak_human'] ?? null,
                 'maxmemory_human' => $flat['maxmemory_human'] ?? null,
                 'connected_clients' => $flat['connected_clients'] ?? null,

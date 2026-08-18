@@ -40,17 +40,22 @@ class JsonlWriter
     {
         $days ??= (int) config('spoke.retention_days', 7);
         $cutoff = time() - $days * 86400;
+        $metricsCutoff = time() - max(1, (int) config('spoke.metrics.retention_days', $days)) * 86400;
         $deleted = 0;
 
         $dir = config('spoke.storage_path');
 
         if (is_dir($dir)) {
             foreach (glob($dir . '/*.jsonl') ?: [] as $file) {
-                if (filemtime($file) < $cutoff && @unlink($file)) {
+                $limit = str_starts_with(basename($file), 'metrics-') ? $metricsCutoff : $cutoff;
+
+                if (filemtime($file) < $limit && @unlink($file)) {
                     $deleted++;
                 }
             }
         }
+
+        $deleted += $this->pruneRollups();
 
         $mailDir = config('spoke.mail_body_dir');
 
@@ -59,6 +64,29 @@ class JsonlWriter
                 if (filemtime($file) < $cutoff && @unlink($file)) {
                     $deleted++;
                 }
+            }
+        }
+
+        return $deleted;
+    }
+
+    /**
+     * Rollups use their own, longer retention window.
+     */
+    private function pruneRollups(): int
+    {
+        $dir = JsonlFile::rollupDir();
+
+        if (! is_dir($dir)) {
+            return 0;
+        }
+
+        $cutoff = time() - max(1, (int) config('spoke.rollup.retention_days', 90)) * 86400;
+        $deleted = 0;
+
+        foreach (glob($dir . '/daily-*.jsonl') ?: [] as $file) {
+            if (filemtime($file) < $cutoff && @unlink($file)) {
+                $deleted++;
             }
         }
 

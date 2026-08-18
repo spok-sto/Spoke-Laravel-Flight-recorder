@@ -16,7 +16,9 @@ Route::group([
         Route::get('/queries', [SpokeApiController::class, 'queries'])->name('queries');
         Route::get('/queries/stats', [SpokeApiController::class, 'queryStats'])->name('queries.stats');
         Route::get('/requests', [SpokeApiController::class, 'requests'])->name('requests');
+        Route::get('/requests/trends', [SpokeApiController::class, 'requestTrends'])->name('requests.trends');
         Route::get('/mails', [SpokeApiController::class, 'mails'])->name('mails');
+        Route::get('/mails/body', [SpokeApiController::class, 'mailBody'])->name('mails.body');
         Route::get('/queue', [SpokeApiController::class, 'queue'])->name('queue');
         Route::post('/queue/retry', [SpokeApiController::class, 'queueRetry'])->name('queue.retry');
         Route::post('/queue/forget', [SpokeApiController::class, 'queueForget'])->name('queue.forget');
@@ -29,6 +31,8 @@ Route::group([
         Route::get('/http', [SpokeApiController::class, 'httpCalls'])->name('http');
         Route::get('/trace/{traceId}', [SpokeApiController::class, 'trace'])->name('trace');
         Route::get('/server', [SpokeApiController::class, 'server'])->name('server');
+        Route::get('/server/metrics', [SpokeApiController::class, 'metrics'])->name('server.metrics');
+        Route::get('/server/rollups', [SpokeApiController::class, 'rollups'])->name('server.rollups');
         Route::get('/exceptions', [SpokeApiController::class, 'exceptions'])->name('exceptions');
         Route::get('/exceptions/groups', [SpokeApiController::class, 'exceptionGroups'])->name('exceptions.groups');
         Route::get('/health', [SpokeApiController::class, 'health'])->name('health');
@@ -36,7 +40,6 @@ Route::group([
 
         Route::middleware(\Konekt\Spoke\Http\Middleware\RequireSpokeDebugTools::class)->group(function () {
             Route::post('/queries/explain', [SpokeApiController::class, 'queryExplain'])->name('queries.explain');
-            Route::get('/mails/body', [SpokeApiController::class, 'mailBody'])->name('mails.body');
             Route::get('/redis/keys', [SpokeApiController::class, 'redisKeys'])->name('redis.keys');
             Route::get('/redis/key', [SpokeApiController::class, 'redisKey'])->name('redis.key');
             Route::post('/capture', [SpokeApiController::class, 'captureToggle'])->name('capture.toggle');

@@ -66,6 +66,72 @@ class RequestStatsReader
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    public function trends(): array
+    {
+        $dates = array_reverse(JsonlFile::dates('requests'));
+        $routes = [];
+
+        foreach ($dates as $date) {
+            foreach ($this->aggregateFile(JsonlFile::path('requests', $date)) as $uri => $stats) {
+                $routes[$uri]['total_count'] = ($routes[$uri]['total_count'] ?? 0) + $stats['count'];
+                $routes[$uri]['by_date'][$date] = $stats;
+            }
+        }
+
+        $rows = [];
+
+        foreach ($routes as $uri => $info) {
+            $series = [];
+            $first = null;
+            $latest = null;
+
+            foreach ($dates as $date) {
+                $stats = $info['by_date'][$date] ?? null;
+                $p95 = $stats['p95_ms'] ?? null;
+                $series[] = [
+                    'date' => $date,
+                    'p95_ms' => $p95,
+                    'avg_ms' => $stats['avg_ms'] ?? null,
+                    'count' => $stats['count'] ?? 0,
+                ];
+
+                if ($p95 !== null) {
+                    $first ??= $p95;
+                    $latest = $p95;
+                }
+            }
+
+            $trendPct = null;
+
+            if ($first !== null && $first > 0 && $latest !== null && $first !== $latest) {
+                $trendPct = (int) round((($latest / $first) - 1) * 100);
+            }
+
+            $rows[] = [
+                'uri' => $uri,
+                'total_count' => $info['total_count'],
+                'latest_p95_ms' => $latest,
+                'trend_pct' => $trendPct,
+                'series' => $series,
+            ];
+        }
+
+        usort($rows, static function (array $a, array $b): int {
+            return ($b['total_count'] <=> $a['total_count']) ?: (($b['latest_p95_ms'] ?? 0) <=> ($a['latest_p95_ms'] ?? 0));
+        });
+
+        return [
+            'data' => array_slice($rows, 0, 20),
+            'meta' => [
+                'dates' => $dates,
+                'generated_at' => now()->format('Y-m-d H:i:s'),
+            ],
+        ];
+    }
+
+    /**
      * @return array<string, array{count: int, avg_ms: float, p95_ms: float}>
      */
     private function aggregateFile(string $file): array

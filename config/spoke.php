@@ -4,7 +4,7 @@ return [
 
     'enabled' => env('SPOKE_ENABLED', false),
 
-    'version' => '1.1.2',
+    'version' => '1.2.0',
 
     'path' => env('SPOKE_PATH', 'spoke'),
 
@@ -77,6 +77,9 @@ return [
             'sample_rate' => env('SPOKE_REQUESTS_SAMPLE_RATE', 1.0),
             'record_body' => env('SPOKE_RECORD_REQUEST_BODY', false),
             'record_body_max_bytes' => env('SPOKE_REQUEST_BODY_MAX_BYTES', 8192),
+            'persist_queries' => 50,
+            'persist_http' => 20,
+            'persist_redis' => 20,
         ],
         'mails' => [
             'enabled' => env('SPOKE_RECORD_MAILS', true),
@@ -145,6 +148,20 @@ return [
         'detect' => env('SPOKE_DETECT_DEPLOY', true),
     ],
 
+    'metrics' => [
+        'enabled' => env('SPOKE_METRICS_ENABLED', false),
+        'sample_database' => env('SPOKE_METRICS_DATABASE', true),
+        'sample_redis' => env('SPOKE_METRICS_REDIS', true),
+        'sample_queue' => env('SPOKE_METRICS_QUEUE', true),
+        'sample_web_opcache' => env('SPOKE_METRICS_WEB_OPCACHE', true),
+        'retention_days' => env('SPOKE_METRICS_RETENTION_DAYS', 7),
+    ],
+
+    'rollup' => [
+        'enabled' => env('SPOKE_ROLLUP_ENABLED', false),
+        'retention_days' => env('SPOKE_ROLLUP_RETENTION_DAYS', 90),
+    ],
+
     'capture' => [
         'ttl_minutes' => env('SPOKE_CAPTURE_TTL_MINUTES', 60),
         'max_body_bytes' => env('SPOKE_CAPTURE_MAX_BODY_BYTES', 262144),
@@ -157,4 +174,6 @@ return [
     'per_page' => 50,
 
     'redis_value_max_bytes' => 8192,
+
+    'job_payload_max_bytes' => 16384,
 ];

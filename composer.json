@@ -1,10 +1,10 @@
 {
     "name": "konekt/spoke",
-    "description": "Self-hosted Laravel observability and request tracing without a telemetry database.",
+    "description": "Spoke 1.2.0 Laravel Flight control — self-hosted request tracing without a telemetry database.",
     "type": "library",
     "license": "proprietary",
     "homepage": "https://github.com/spok-sto/spoke",
-    "version": "1.1.2",
+    "version": "1.2.0",
     "keywords": [
         "laravel",
         "observability",

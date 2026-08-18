@@ -10,6 +10,7 @@ use Illuminate\Queue\Failed\DatabaseUuidFailedJobProvider;
 use Illuminate\Queue\RedisQueue;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Konekt\Spoke\Support\JobPayloadInspector;
 use Throwable;
 use Traversable;
 
@@ -66,14 +67,17 @@ class QueueReader
                 ->limit(100)
                 ->get()
                 ->map(function ($job) {
+                    $payload = $job->payload ?? null;
+
                     return [
                         'id' => $job->id,
                         'queue' => $job->queue,
-                        'job' => $this->jobNameFromPayload($job->payload ?? null),
+                        'job' => $this->jobNameFromPayload($payload),
                         'attempts' => $job->attempts,
                         'created_at' => date('Y-m-d H:i:s', (int) $job->created_at),
                         'available_at' => date('Y-m-d H:i:s', (int) $job->available_at),
                         'status' => 'pending',
+                        'payload' => JobPayloadInspector::inspect(is_string($payload) ? $payload : null),
                     ];
                 })
                 ->all();
@@ -168,6 +172,7 @@ class QueueReader
             'created_at' => null,
             'available_at' => null,
             'status' => $status,
+            'payload' => JobPayloadInspector::inspect($rawPayload),
         ];
     }
 
@@ -245,13 +250,18 @@ class QueueReader
             $failedAt = $failedAt->format('Y-m-d H:i:s');
         }
 
+        $rawPayload = isset($record['payload']) && is_string($record['payload'])
+            ? $record['payload']
+            : null;
+
         return [
             'id' => $identifier !== null ? (string) $identifier : '',
             'uuid' => isset($record['uuid']) ? (string) $record['uuid'] : null,
             'queue' => (string) ($record['queue'] ?? 'n/a'),
-            'job' => $this->jobNameFromPayload($record['payload'] ?? null),
+            'job' => $this->jobNameFromPayload($rawPayload),
             'exception' => mb_substr((string) ($record['exception'] ?? ''), 0, 800),
             'failed_at' => $failedAt !== null ? (string) $failedAt : null,
+            'payload' => JobPayloadInspector::inspect($rawPayload),
         ];
     }
 

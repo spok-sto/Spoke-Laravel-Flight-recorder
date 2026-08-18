@@ -181,7 +181,7 @@ class ServerInfoReader
         return null;
     }
 
-    private function cpu(): array
+    public function cpu(): array
     {
         $cores = null;
 
@@ -200,7 +200,7 @@ class ServerInfoReader
         ];
     }
 
-    private function memory(): array
+    public function memory(): array
     {
         if (! is_readable('/proc/meminfo')) {
             return ['available' => false];
@@ -225,7 +225,7 @@ class ServerInfoReader
         ];
     }
 
-    private function disk(): array
+    public function disk(): array
     {
         $path = base_path();
 
@@ -265,7 +265,7 @@ class ServerInfoReader
         ];
     }
 
-    private function opcache(): array
+    public function opcache(): array
     {
         if (! function_exists('opcache_get_status')) {
             return ['available' => false];
@@ -296,7 +296,7 @@ class ServerInfoReader
         ];
     }
 
-    private function database(): array
+    public function database(): array
     {
         $driver = DB::connection()->getDriverName();
         $database = DB::connection()->getDatabaseName();

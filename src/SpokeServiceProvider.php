@@ -36,6 +36,7 @@ use Konekt\Spoke\Recorders\SchedulerRecorder;
 use Konekt\Spoke\Support\CaptureMode;
 use Konekt\Spoke\Support\DeploymentMarker;
 use Konekt\Spoke\Support\JsonlWriter;
+use Konekt\Spoke\Support\MetricsSampler;
 use Konekt\Spoke\Support\NPlusOneDetector;
 use Konekt\Spoke\Support\TraceContext;
 use Throwable;
@@ -58,6 +59,7 @@ class SpokeServiceProvider extends ServiceProvider
         $this->app->singleton(SchedulerRecorder::class);
         $this->app->singleton(CommandRecorder::class);
         $this->app->singleton(DeploymentMarker::class);
+        $this->app->singleton(MetricsSampler::class);
         $this->app->singleton(CaptureMode::class);
 
         $this->app->scoped(TraceContext::class);
@@ -74,6 +76,8 @@ class SpokeServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 \Konekt\Spoke\Console\PruneCommand::class,
+                \Konekt\Spoke\Console\RollupCommand::class,
+                \Konekt\Spoke\Console\SampleCommand::class,
             ]);
         }
 
@@ -167,6 +171,13 @@ class SpokeServiceProvider extends ServiceProvider
             $exceptionRecorder = $this->app->make(ExceptionRecorder::class);
             Event::listen(MessageLogged::class, static function (MessageLogged $event) use ($exceptionRecorder) {
                 $exceptionRecorder->record($event);
+            });
+        }
+
+        if (config('spoke.metrics.enabled') && config('spoke.metrics.sample_web_opcache')) {
+            $metricsSampler = $this->app->make(MetricsSampler::class);
+            Event::listen(RequestHandled::class, static function () use ($metricsSampler) {
+                $metricsSampler->sampleWebRuntime();
             });
         }
 

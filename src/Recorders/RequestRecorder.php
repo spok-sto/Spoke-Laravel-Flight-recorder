@@ -60,8 +60,11 @@ class RequestRecorder
             }
 
             $this->persistRemainingQueries($queries, $nPlusOneSql);
+            $this->persistFlightQueries($queries, $nPlusOneSql);
             $this->persistRemainingRedis($redisCommands);
+            $this->persistFlightRedis($redisCommands);
             $this->persistRemainingHttp($httpCalls);
+            $this->persistFlightHttp($httpCalls);
 
             $queryTotalMs = 0.0;
             $slowMs = (float) config('spoke.recorders.queries.slow_only_ms', 50);
@@ -207,6 +210,37 @@ class RequestRecorder
     }
 
     /**
+     * @param  list<array<string, mixed>>  $queries
+     * @param  array<string, true>  $nPlusOneSql
+     */
+    private function persistFlightQueries(array $queries, array $nPlusOneSql): void
+    {
+        $max = max(0, (int) config('spoke.recorders.requests.persist_queries', 50));
+        $written = 0;
+
+        foreach ($queries as $query) {
+            if ($written >= $max) {
+                break;
+            }
+
+            if (! empty($query['already_written'])) {
+                continue;
+            }
+
+            $normalized = QueryNormalizer::normalize((string) ($query['sql'] ?? ''));
+
+            if (isset($nPlusOneSql[$normalized])) {
+                continue;
+            }
+
+            $row = $query;
+            unset($row['already_written']);
+            $this->writer->write('queries', $row);
+            $written++;
+        }
+    }
+
+    /**
      * @param  list<array<string, mixed>>  $commands
      */
     private function persistRemainingRedis(array $commands): void
@@ -227,6 +261,37 @@ class RequestRecorder
             $row = $command;
             unset($row['already_written']);
             $this->writer->write('redis', $row);
+        }
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $commands
+     */
+    private function persistFlightRedis(array $commands): void
+    {
+        $max = max(0, (int) config('spoke.recorders.requests.persist_redis', 20));
+        $slowOnly = config('spoke.recorders.redis.slow_only_ms', 5);
+        $written = 0;
+
+        foreach ($commands as $command) {
+            if ($written >= $max) {
+                break;
+            }
+
+            if (! empty($command['already_written'])) {
+                continue;
+            }
+
+            $ms = (float) ($command['ms'] ?? 0);
+
+            if ($slowOnly === null || $slowOnly === '' || $ms >= (float) $slowOnly) {
+                continue;
+            }
+
+            $row = $command;
+            unset($row['already_written']);
+            $this->writer->write('redis', $row);
+            $written++;
         }
     }
 
@@ -254,6 +319,43 @@ class RequestRecorder
             $row = $call;
             unset($row['already_written'], $row['_started_at']);
             $this->writer->write('http', $row);
+        }
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $calls
+     */
+    private function persistFlightHttp(array $calls): void
+    {
+        if ($this->capture->active()) {
+            return;
+        }
+
+        $max = max(0, (int) config('spoke.recorders.requests.persist_http', 20));
+        $slowOnly = config('spoke.recorders.http_client.slow_only_ms', 200);
+        $written = 0;
+
+        foreach ($calls as $call) {
+            if ($written >= $max) {
+                break;
+            }
+
+            if (! empty($call['already_written'])) {
+                continue;
+            }
+
+            $failed = ! empty($call['failed']) || ! array_key_exists('status', $call);
+            $ms = (float) ($call['ms'] ?? 0);
+            $isSlow = $slowOnly === null || $slowOnly === '' || $ms >= (float) $slowOnly;
+
+            if ($failed || $isSlow) {
+                continue;
+            }
+
+            $row = $call;
+            unset($row['already_written'], $row['_started_at'], $row['request_body'], $row['response_body']);
+            $this->writer->write('http', $row);
+            $written++;
         }
     }
 

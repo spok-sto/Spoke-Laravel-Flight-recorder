@@ -13,9 +13,12 @@ use Konekt\Spoke\Readers\HealthReader;
 use Konekt\Spoke\Readers\JobStatsReader;
 use Konekt\Spoke\Readers\JsonlReader;
 use Konekt\Spoke\Readers\LaravelLogReader;
+use Konekt\Spoke\Readers\MetricsReader;
 use Konekt\Spoke\Readers\QueryStatsReader;
 use Konekt\Spoke\Readers\QueueReader;
 use Konekt\Spoke\Readers\RedisInfoReader;
+use Konekt\Spoke\Readers\RequestStatsReader;
+use Konekt\Spoke\Readers\RollupReader;
 use Konekt\Spoke\Readers\ServerInfoReader;
 use Konekt\Spoke\Readers\TraceReader;
 use Konekt\Spoke\Support\CaptureMode;
@@ -84,6 +87,11 @@ class SpokeApiController extends Controller
             search: $request->query('search'),
             page: max(1, (int) $request->query('page', '1')),
         ));
+    }
+
+    public function requestTrends(RequestStatsReader $reader): JsonResponse
+    {
+        return response()->json($reader->trends());
     }
 
     public function mails(Request $request, JsonlReader $reader): JsonResponse
@@ -235,6 +243,18 @@ class SpokeApiController extends Controller
     public function server(ServerInfoReader $reader): JsonResponse
     {
         return response()->json($reader->info());
+    }
+
+    public function metrics(Request $request, MetricsReader $reader): JsonResponse
+    {
+        return response()->json($reader->series($request->query('range')));
+    }
+
+    public function rollups(Request $request, RollupReader $reader): JsonResponse
+    {
+        return response()->json($reader->daily(
+            $request->query('days') !== null ? (int) $request->query('days') : null
+        ));
     }
 
     public function health(Request $request, HealthReader $reader): JsonResponse

@@ -94,6 +94,38 @@ class JsonlFile
         return (string) config('spoke.storage_path') . '/' . $type . '-' . $date . '.jsonl';
     }
 
+    /**
+     * Daily rollups live in a subdirectory so the raw telemetry retention does not
+     * delete them together with the `*-YYYY-MM-DD.jsonl` files.
+     */
+    public static function rollupDir(): string
+    {
+        return (string) config('spoke.storage_path') . '/rollups';
+    }
+
+    public static function rollupPath(string $month): string
+    {
+        return self::rollupDir() . '/daily-' . $month . '.jsonl';
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function rollupMonths(): array
+    {
+        $months = [];
+
+        foreach (glob(self::rollupDir() . '/daily-*.jsonl') ?: [] as $file) {
+            if (preg_match('/-(\d{4}-\d{2})\.jsonl$/', $file, $m)) {
+                $months[] = $m[1];
+            }
+        }
+
+        rsort($months);
+
+        return $months;
+    }
+
     public static function normalizeDate(?string $date): string
     {
         $date = $date ?: date('Y-m-d');

@@ -37,11 +37,10 @@
 
 ## What's new in 1.2.0
 
-- Job Details popup on Pending, Failed and History — redacted constructor payload, same interaction as Flight Recorder
+- Job Details popup
 - Mail HTML preview stays available in monitor mode (`APP_DEBUG=false`)
 - N+1 detection ignores INSERT/UPDATE loops, caps persisted examples, and alerts on Health
 - Capture, EXPLAIN and Redis inspect stay behind `APP_DEBUG=true`
-- Requests open Flight Recorder from the row click — no extra button
 - Requests → Trends: p95 per route across retained days, with sparkline and change indicator
 - Server → History: optional server metrics sampling and daily rollups (off by default)
 
@@ -179,9 +178,6 @@ request/job correlation, logs and deployment monitoring. Choose it when you
 want that operational model. Choose Spoke when telemetry must stay on
 infrastructure you control.
 
-Also nearby: [Horizon](https://github.com/laravel/horizon) for Redis queue
-operations, and [Debugbar](https://github.com/barryvdh/laravel-debugbar) for
-in-browser local profiling.
 
 ## Find the SQL that is slowing Laravel down
 

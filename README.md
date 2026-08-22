@@ -1,4 +1,4 @@
-# Spoke 1.2.0 Laravel Flight control
+# Spoke 1.2.0 Laravel Flight Recorder
 
 <p align="center">
   <strong>One request. One trace. No telemetry database.</strong>
